@@ -82,6 +82,25 @@ a{color:var(--cyan);}
 }
 .dealer-seg button.active{background:var(--teal);color:#04241f;}
 
+/* ---------- filter bar ---------- */
+.filterbar{
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  padding:8px 20px; background:rgba(8,14,34,.85); border-bottom:1px solid var(--border);
+  font-size:12.5px; color:var(--ink2);
+}
+.fb-label{font-weight:700; color:var(--ink);}
+.fb-item{display:flex; align-items:center; gap:6px;}
+.filterbar select{
+  background:var(--card2); border:1px solid var(--border); color:var(--ink);
+  padding:5px 9px; border-radius:7px; font-size:12px;
+}
+.filterbar button{
+  background:transparent; border:1px solid var(--border); color:var(--ink2);
+  padding:5px 12px; border-radius:7px; font-size:12px; cursor:pointer;
+}
+.filterbar button:hover{color:var(--teal); border-color:var(--teal);}
+.fb-current{margin-left:auto; color:var(--teal); font-weight:700; font-size:12px;}
+
 /* ---------- nav tabs ---------- */
 .navtabs{
   display:flex; gap:4px; overflow-x:auto; padding:8px 16px;
@@ -219,6 +238,21 @@ footer.foot{text-align:center; color:var(--muted); font-size:11.5px; padding:30p
   </div>
 </div>
 
+<div class="filterbar">
+  <span class="fb-label">🔎 篩選：</span>
+  <span class="fb-item">廠區
+    <select id="fPlant"><option value="all">全部廠區</option></select>
+  </span>
+  <span class="fb-item">起
+    <select id="fFrom"></select>
+  </span>
+  <span class="fb-item">訖
+    <select id="fTo"></select>
+  </span>
+  <button id="fReset">重設篩選</button>
+  <span class="fb-current" id="fCurrent"></span>
+</div>
+
 <div class="navtabs" id="navtabs"></div>
 
 <main id="main">
@@ -231,6 +265,7 @@ footer.foot{text-align:center; color:var(--muted); font-size:11.5px; padding:30p
   <section class="tab-panel" id="tab-voc"></section>
   <section class="tab-panel" id="tab-paint"></section>
   <section class="tab-panel" id="tab-warranty"></section>
+  <section class="tab-panel" id="tab-insights"></section>
 </main>
 
 <footer class="foot">CSI 服務戰情系統 · 資料範圍 <span id="footRange"></span> · 產生時間 <span id="footGen"></span></footer>
@@ -292,10 +327,14 @@ function groupBy(arr, keyFn){
 function medal(i){ return i===0?'🥇':i===1?'🥈':i===2?'🥉':''; }
 
 // ---------------- state ----------------
-const state = { dealer: 'all' };
+const state = { dealer: 'all', plant: 'all', monthFrom: MONTHS[0], monthTo: MONTHS[MONTHS.length-1] };
 function dataset(){
-  if(state.dealer === 'all') return RAW;
-  return RAW.filter(r=> r.d === state.dealer);
+  return RAW.filter(r=>{
+    if(state.dealer !== 'all' && r.d !== state.dealer) return false;
+    if(state.plant !== 'all' && r.f !== state.plant) return false;
+    if(r.y < state.monthFrom || r.y > state.monthTo) return false;
+    return true;
+  });
 }
 
 // ---------------- lightweight SVG/CSS chart engine (no external deps) ----------------
@@ -465,15 +504,55 @@ function renderHeader(){
   const overallAvg = mean(ds,'g');
   const perfect = ds.filter(r=> r.g!=null && r.g>=4.999).length;
   const perfectRate = total? (100*perfect/total).toFixed(1)+'%' : '0.0%';
-  const range = MONTHS.length? fmtYM(MONTHS[0])+'–'+fmtYM(MONTHS[MONTHS.length-1]) : '—';
+  const range = fmtYM(state.monthFrom)+'–'+fmtYM(state.monthTo);
   document.getElementById('headerKpis').innerHTML = `
     <div class="hkpi"><b>${total.toLocaleString()}</b><span>累計筆數</span></div>
     <div class="hkpi"><b>${fmt3(overallAvg)}</b><span>整體均分</span></div>
     <div class="hkpi"><b>${perfectRate}</b><span>滿分率</span></div>
     <div class="hkpi"><b>${range}</b><span>資料期間</span></div>
   `;
-  document.getElementById('footRange').textContent = range;
+  const fullRange = MONTHS.length? fmtYM(MONTHS[0])+'–'+fmtYM(MONTHS[MONTHS.length-1]) : '—';
+  document.getElementById('footRange').textContent = fullRange;
   document.getElementById('footGen').textContent = META.generated_at || '';
+  const bits = [];
+  if(state.plant!=='all') bits.push('廠區：'+state.plant);
+  if(state.monthFrom!==MONTHS[0] || state.monthTo!==MONTHS[MONTHS.length-1]) bits.push('月份：'+range);
+  document.getElementById('fCurrent').textContent = bits.length? ('已篩選 — '+bits.join('　')) : '顯示全部資料';
+}
+
+// ================= FILTER BAR =================
+function buildFilterBar(){
+  const plants = Array.from(new Set(RAW.map(r=>r.f))).sort();
+  const plantSel = document.getElementById('fPlant');
+  plants.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p; plantSel.appendChild(o); });
+  const fromSel = document.getElementById('fFrom'), toSel = document.getElementById('fTo');
+  MONTHS.forEach(m=>{
+    const o1=document.createElement('option'); o1.value=m; o1.textContent=fmtYM(m); fromSel.appendChild(o1);
+    const o2=document.createElement('option'); o2.value=m; o2.textContent=fmtYM(m); toSel.appendChild(o2);
+  });
+  fromSel.value = state.monthFrom; toSel.value = state.monthTo;
+
+  function applyAndRerender(){
+    renderHeader();
+    const t = TABS.find(t=>t.id===currentTab);
+    if(t) t.render();
+  }
+  plantSel.addEventListener('change', ()=>{ state.plant = plantSel.value; applyAndRerender(); });
+  fromSel.addEventListener('change', ()=>{
+    state.monthFrom = fromSel.value;
+    if(state.monthFrom > state.monthTo){ state.monthTo = state.monthFrom; toSel.value = state.monthTo; }
+    applyAndRerender();
+  });
+  toSel.addEventListener('change', ()=>{
+    state.monthTo = toSel.value;
+    if(state.monthTo < state.monthFrom){ state.monthFrom = state.monthTo; fromSel.value = state.monthFrom; }
+    applyAndRerender();
+  });
+  document.getElementById('fReset').addEventListener('click', ()=>{
+    state.plant='all'; state.monthFrom=MONTHS[0]; state.monthTo=MONTHS[MONTHS.length-1];
+    plantSel.value='all'; fromSel.value=state.monthFrom; toSel.value=state.monthTo;
+    applyAndRerender();
+  });
 }
 
 // ================= CLOCK =================
@@ -497,6 +576,7 @@ const TABS = [
   {id:'voc',      icon:'🗣️', label:'VOC客戶聲音', render:renderVoc},
   {id:'paint',    icon:'🎨', label:'鈑噴分析',   render:renderCategoryTab.bind(null,'鈑噴','paint')},
   {id:'warranty', icon:'🔒', label:'保固分析',   render:renderCategoryTab.bind(null,'保固','warranty')},
+  {id:'insights', icon:'🧭', label:'趨勢洞察',   render:renderInsights},
 ];
 let currentTab = 'overview';
 function buildNav(){
@@ -550,7 +630,7 @@ function renderOverview(){
 
     <div class="grid grid-2" style="margin-top:16px;">
       <div class="card">
-        <h3>📐 各指標平均分 <span class="tag">${MONTHS.length}個月全數據</span></h3>
+        <h3>📐 各指標平均分 <span class="tag">${MONTHS.filter(m=>m>=state.monthFrom&&m<=state.monthTo).length}個月數據</span></h3>
         ${DIMS.map(d=>{
           const v = stats[d.k]||0;
           const base=3.5, span=5-base;
@@ -922,8 +1002,136 @@ function renderCategoryTab(category, tabId){
   drawLineChart(tabId+'-byplant', { labels: MONTHS.map(fmtYM2), min:3, max:5, series: byPlantMonth });
 }
 
+// ================= TAB 10: TREND INSIGHTS (趨勢洞察) =================
+function splitTrend(monthsPresent, arrByMonth){
+  // compare average of the earlier half of months vs the later half, for records within the current filter
+  if(monthsPresent.length < 2) return null;
+  const mid = Math.ceil(monthsPresent.length/2);
+  const early = monthsPresent.slice(0, mid);
+  const late = monthsPresent.slice(mid);
+  const earlyArr = early.flatMap(m=>arrByMonth.get(m)||[]);
+  const lateArr = late.flatMap(m=>arrByMonth.get(m)||[]);
+  const earlyAvg = mean(earlyArr,'g'), lateAvg = mean(lateArr,'g');
+  if(earlyAvg==null || lateAvg==null) return null;
+  return { earlyAvg, lateAvg, delta: lateAvg-earlyAvg, earlyLabel:fmtYM2(early[0])+'~'+fmtYM2(early[early.length-1]), lateLabel:fmtYM2(late[0])+'~'+fmtYM2(late[late.length-1]) };
+}
+function trendTag(delta){
+  if(delta==null) return {icon:'▪️', word:'資料不足', cls:'flat'};
+  if(delta >= 0.01) return {icon:'🔺', word:'上升', cls:'up'};
+  if(delta <= -0.01) return {icon:'🔻', word:'下滑', cls:'down'};
+  return {icon:'➖', word:'持平', cls:'flat'};
+}
+function priorityBadge(avg, count){
+  if(count < 20) return {label:'樣本偏少', cls:'pill warn'};
+  if(avg==null) return {label:'—', cls:'pill'};
+  if(avg < 4.85) return {label:'🔴 優先關注', cls:'pill bad'};
+  if(avg < 4.95) return {label:'🟡 持續追蹤', cls:'pill warn'};
+  return {label:'🟢 穩定', cls:'pill good'};
+}
+function renderInsights(){
+  const el = document.getElementById('tab-insights');
+  const ds = dataset();
+  const overall = dimStats(ds);
+  const monthsInRange = MONTHS.filter(m=> m>=state.monthFrom && m<=state.monthTo);
+  const byMonth = groupBy(ds, r=>r.y);
+  const overallTrend = splitTrend(monthsInRange, byMonth);
+  const ot = trendTag(overallTrend? overallTrend.delta : null);
+
+  // weakest overall dimension
+  const dimRanked = DIMS.map(d=>({...d, avg: overall[d.k]})).sort((a,b)=>(a.avg??9)-(b.avg??9));
+  const weakestDim = dimRanked[0];
+
+  // per-plant analysis
+  const byPlant = groupBy(ds, r=>r.f);
+  const plantRows = Array.from(byPlant.entries()).map(([plant, arr])=>{
+    const stats = dimStats(arr);
+    const monthsHere = monthsInRange.filter(m=> arr.some(r=>r.y===m));
+    const pByMonth = groupBy(arr, r=>r.y);
+    const trend = splitTrend(monthsHere, pByMonth);
+    const weakest = DIMS.map(d=>({...d, avg:stats[d.k]})).sort((a,b)=>(a.avg??9)-(b.avg??9))[0];
+    return { plant, ...stats, trend, weakest };
+  });
+  const withTrend = plantRows.filter(p=>p.trend);
+  const declining = withTrend.filter(p=>p.trend.delta <= -0.01).sort((a,b)=>a.trend.delta-b.trend.delta);
+  const improving = withTrend.filter(p=>p.trend.delta >= 0.01).sort((a,b)=>b.trend.delta-a.trend.delta);
+  const priorityPlants = plantRows.filter(p=>p.count>=20 && p.g!=null && p.g<4.95).sort((a,b)=>(a.g||0)-(b.g||0));
+
+  const periodLabel = fmtYM(state.monthFrom)+'–'+fmtYM(state.monthTo);
+  const scopeLabel = (state.dealer!=='all'? state.dealer : '全體') + (state.plant!=='all'? '・'+state.plant : '');
+
+  el.innerHTML = `
+    <div class="card">
+      <h3>🧭 整體結論 <span class="tag">${scopeLabel} · ${periodLabel}</span></h3>
+      <p style="font-size:14px; line-height:1.9; color:var(--ink);">
+        本期間共 <b class="score-good">${ds.length.toLocaleString()}</b> 筆進廠紀錄，整體均分為 <b class="${scoreClass(overall.g)}">${fmt3(overall.g)}</b>
+        （滿分5分）。${overallTrend? `對比前半期（${overallTrend.earlyLabel}，均分 ${fmt3(overallTrend.earlyAvg)}）與後半期（${overallTrend.lateLabel}，均分 ${fmt3(overallTrend.lateAvg)}），整體呈<b class="${ot.cls}">${ot.icon} ${ot.word}</b>趨勢`
+          + (Math.abs(overallTrend.delta)>=0.01? `，變動 ${overallTrend.delta>0?'+':''}${overallTrend.delta.toFixed(3)} 分。` : '。')
+          : '目前篩選範圍內月份數不足，無法計算前後期趨勢。'}
+        五項指標中以 <b>${weakestDim.icon} ${weakestDim.label}</b>（${fmt3(weakestDim.avg)}）相對最弱，建議優先檢視此構面的服務流程。
+        共有 <b class="down">${declining.length}</b> 廠呈現下滑趨勢、<b class="up">${improving.length}</b> 廠呈現上升趨勢；
+        另有 <b class="score-bad">${priorityPlants.length}</b> 廠均總分低於 4.95，列入優先關注名單。
+      </p>
+    </div>
+
+    <div class="grid grid-2" style="margin-top:16px;">
+      <div class="card">
+        <h3>🔻 退步廠區（依變動幅度排序）</h3>
+        ${declining.length? declining.slice(0,8).map(p=>`
+          <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <b>${p.plant}</b>
+              <span class="down">🔻 ${p.trend.delta.toFixed(3)}</span>
+            </div>
+            <div style="font-size:12px; color:var(--ink2); margin-top:3px;">
+              ${p.trend.earlyLabel} ${fmt3(p.trend.earlyAvg)} → ${p.trend.lateLabel} ${fmt3(p.trend.lateAvg)}；
+              最弱項為 <b>${p.weakest.label}</b>（${fmt3(p.weakest.avg)}），筆數 ${p.count}。
+            </div>
+          </div>`).join('') : `<div class="empty">此範圍內沒有明顯下滑的廠區</div>`}
+      </div>
+      <div class="card">
+        <h3>🔺 進步廠區（依變動幅度排序）</h3>
+        ${improving.length? improving.slice(0,8).map(p=>`
+          <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <b>${p.plant}</b>
+              <span class="up">🔺 +${p.trend.delta.toFixed(3)}</span>
+            </div>
+            <div style="font-size:12px; color:var(--ink2); margin-top:3px;">
+              ${p.trend.earlyLabel} ${fmt3(p.trend.earlyAvg)} → ${p.trend.lateLabel} ${fmt3(p.trend.lateAvg)}；
+              最弱項為 <b>${p.weakest.label}</b>（${fmt3(p.weakest.avg)}），筆數 ${p.count}。
+            </div>
+          </div>`).join('') : `<div class="empty">此範圍內沒有明顯進步的廠區</div>`}
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h3>🚩 廠區優先級與建議 <span class="tag">樣本 ≥20 筆</span></h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>廠區</th><th>均總分</th><th>筆數</th><th>趨勢</th><th>最弱指標</th><th>優先級</th><th>建議</th></tr></thead>
+        <tbody>${plantRows.slice().sort((a,b)=>(a.g??9)-(b.g??9)).map(p=>{
+          const badge = priorityBadge(p.g, p.count);
+          const tg = trendTag(p.trend? p.trend.delta : null);
+          const advice = p.g!=null && p.g<4.85
+            ? `均分明顯偏低，建議優先檢視「${p.weakest.label}」相關作業並安排個案訪談。`
+            : (p.g!=null && p.g<4.95 ? `建議持續追蹤「${p.weakest.label}」構面表現。` : `表現穩定，維持現有服務水準即可。`);
+          return `<tr>
+            <td class="name">${p.plant}</td>
+            <td><span class="${pillClass(p.g)}">${fmt3(p.g)}</span></td>
+            <td>${p.count}</td>
+            <td class="${tg.cls}">${tg.icon} ${tg.word}${p.trend? ' '+(p.trend.delta>0?'+':'')+p.trend.delta.toFixed(3):''}</td>
+            <td>${p.weakest.label}（${fmt3(p.weakest.avg)}）</td>
+            <td><span class="${badge.cls}">${badge.label}</span></td>
+            <td style="text-align:left; white-space:normal; max-width:280px;">${advice}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>
+    </div>
+  `;
+}
+
 // ================= INIT =================
 buildNav();
+buildFilterBar();
 renderHeader();
 switchTab('overview');
 
