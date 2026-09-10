@@ -1,0 +1,933 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CSI 服務戰情系統｜裕信汽車服務部</title>
+<style>
+:root{
+  --bg0:#0a1128;
+  --bg1:#0d1b3e;
+  --card:#131c3a;
+  --card2:#0f1730;
+  --border:rgba(255,255,255,.08);
+  --ink:#e8ecf7;
+  --ink2:#98a2c0;
+  --muted:#66708f;
+  --teal:#2dd4bf;
+  --cyan:#22d3ee;
+  --green:#34d399;
+  --amber:#fbbf24;
+  --purple:#a78bfa;
+  --red:#f87171;
+  --pink:#fb7185;
+  --blue:#60a5fa;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:radial-gradient(1200px 600px at 10% -10%, #10214f 0%, transparent 60%),
+             radial-gradient(1000px 500px at 100% 0%, #0f1f46 0%, transparent 55%),
+             linear-gradient(180deg,var(--bg0),var(--bg1) 60%,var(--bg0));
+  color:var(--ink);
+  font-family:"Microsoft JhengHei","PingFang TC","Segoe UI",system-ui,-apple-system,sans-serif;
+  font-size:14px;
+  line-height:1.5;
+  min-height:100vh;
+}
+::-webkit-scrollbar{height:8px;width:8px;}
+::-webkit-scrollbar-thumb{background:#26346a;border-radius:4px;}
+a{color:var(--cyan);}
+
+/* ---------- header ---------- */
+.header{
+  position:sticky; top:0; z-index:50;
+  background:rgba(10,17,40,.92);
+  backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--border);
+  padding:10px 20px;
+  display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+}
+.brand{display:flex;align-items:center;gap:10px;min-width:220px;}
+.brand .logo{
+  width:40px;height:40px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #1c2b57, #0b1330);
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+  border:1px solid var(--border);
+  box-shadow:0 0 18px rgba(45,212,191,.25) inset;
+}
+.brand .name{font-size:17px;font-weight:800;letter-spacing:.5px;}
+.brand .sub{font-size:10px;color:var(--muted);letter-spacing:1.5px;margin-top:1px;}
+.header-kpis{
+  display:flex; gap:22px; flex-wrap:wrap; flex:1; justify-content:center;
+}
+.hkpi{text-align:center;min-width:78px;}
+.hkpi b{display:block;font-size:16px;font-weight:800;color:var(--teal);}
+.hkpi span{font-size:10.5px;color:var(--muted);}
+.header-right{display:flex;align-items:center;gap:12px;}
+.clock{text-align:right;font-size:12px;color:var(--ink2);}
+.clock b{display:block;font-size:14px;color:var(--ink);font-variant-numeric:tabular-nums;}
+.live{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(52,211,153,.12); color:var(--green);
+  border:1px solid rgba(52,211,153,.35);
+  padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;letter-spacing:.5px;
+}
+.live .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 1.4s infinite;}
+@keyframes pulse{0%{opacity:1;}50%{opacity:.25;}100%{opacity:1;}}
+
+.dealer-seg{display:flex;background:var(--card2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.dealer-seg button{
+  background:transparent;border:none;color:var(--ink2);padding:6px 12px;font-size:12px;cursor:pointer;font-weight:600;
+}
+.dealer-seg button.active{background:var(--teal);color:#04241f;}
+
+/* ---------- nav tabs ---------- */
+.navtabs{
+  display:flex; gap:4px; overflow-x:auto; padding:8px 16px;
+  background:rgba(6,11,28,.7); border-bottom:1px solid var(--border);
+  position:sticky; top:62px; z-index:40;
+}
+.navtabs::-webkit-scrollbar{height:0;}
+.navtab{
+  white-space:nowrap; padding:8px 16px; border-radius:8px; cursor:pointer;
+  color:var(--ink2); font-size:13px; font-weight:700; border:1px solid transparent;
+}
+.navtab.active{
+  color:var(--bg0); background:linear-gradient(135deg,var(--teal),var(--cyan));
+  box-shadow:0 0 16px rgba(45,212,191,.35);
+}
+.navtab:not(.active):hover{background:var(--card2); color:var(--ink);}
+
+main{padding:18px 20px 60px; max-width:1500px; margin:0 auto;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block; animation:fadein .25s ease;}
+@keyframes fadein{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+
+.grid{display:grid; gap:14px;}
+.grid-4{grid-template-columns:repeat(4,1fr);}
+.grid-2{grid-template-columns:repeat(2,1fr);}
+.grid-3{grid-template-columns:repeat(3,1fr);}
+@media (max-width:1100px){.grid-4{grid-template-columns:repeat(2,1fr);} .grid-3{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:640px){.grid-4,.grid-3,.grid-2{grid-template-columns:1fr;}}
+
+.card{
+  background:linear-gradient(180deg, var(--card), var(--card2));
+  border:1px solid var(--border); border-radius:14px; padding:16px 18px;
+  box-shadow:0 6px 20px rgba(0,0,0,.25);
+}
+.card h3{margin:0 0 10px; font-size:14px; color:var(--ink); display:flex; align-items:center; gap:8px;}
+.card h3 .tag{margin-left:auto; font-size:10.5px; color:var(--muted); font-weight:400; background:rgba(255,255,255,.05); padding:3px 8px; border-radius:20px;}
+
+.kpi{text-align:center; padding:18px 10px;}
+.kpi .ic{font-size:22px;}
+.kpi .num{font-size:26px; font-weight:800; margin-top:4px; color:var(--teal); font-variant-numeric:tabular-nums;}
+.kpi .lbl{font-size:11.5px; color:var(--ink2); margin-top:2px;}
+.kpi.purple{background:linear-gradient(180deg,#241a44,#160f2c); border-color:rgba(167,139,250,.35);}
+.kpi.purple .num{color:var(--purple);}
+
+.barrow{display:flex; align-items:center; gap:10px; margin:12px 0;}
+.barrow .lbl{width:118px; font-size:12.5px; color:var(--ink2); flex-shrink:0;}
+.barrow .track{flex:1; height:16px; background:rgba(255,255,255,.06); border-radius:8px; overflow:hidden; position:relative;}
+.barrow .fill{height:100%; border-radius:8px; background:linear-gradient(90deg,var(--teal),var(--cyan));}
+.barrow .val{width:56px; text-align:right; font-weight:700; font-variant-numeric:tabular-nums; font-size:12.5px;}
+
+table{width:100%; border-collapse:collapse; font-size:12.5px;}
+th,td{padding:8px 10px; text-align:center; border-bottom:1px solid var(--border); white-space:nowrap;}
+th{color:var(--ink2); font-weight:700; position:sticky; top:0; background:var(--card); cursor:pointer; user-select:none;}
+th.sortable:hover{color:var(--teal);}
+tbody tr:hover{background:rgba(255,255,255,.03);}
+.tablewrap{overflow-x:auto;}
+td.name{text-align:left;}
+.medal{font-size:15px;}
+.rank-badge{display:inline-block;width:22px;height:22px;line-height:22px;border-radius:50%;background:rgba(255,255,255,.06);font-size:11px;font-weight:800;}
+
+.score-good{color:var(--green); font-weight:700;}
+.score-warn{color:var(--amber); font-weight:700;}
+.score-bad{color:var(--red); font-weight:700;}
+.pill{display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:700;}
+.pill.good{background:rgba(52,211,153,.15); color:var(--green);}
+.pill.warn{background:rgba(251,191,36,.15); color:var(--amber);}
+.pill.bad{background:rgba(248,113,113,.15); color:var(--red);}
+
+.chart-wrap{position:relative; height:280px;}
+.chart-wrap.tall{height:340px;}
+.chart-wrap.short{height:220px;}
+
+.searchbar{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;}
+.searchbar input[type=text]{
+  flex:1; min-width:220px; background:var(--card2); border:1px solid var(--border); color:var(--ink);
+  padding:10px 14px; border-radius:10px; font-size:13px;
+}
+.searchbar select{background:var(--card2); border:1px solid var(--border); color:var(--ink); padding:10px 12px; border-radius:10px; font-size:13px;}
+.searchbar button{
+  background:linear-gradient(135deg,var(--teal),var(--cyan)); border:none; color:#04241f; font-weight:800;
+  padding:10px 22px; border-radius:10px; cursor:pointer; font-size:13px;
+}
+.searchbar button:hover{filter:brightness(1.08);}
+
+.plate-badge{font-size:22px; font-weight:800; background:var(--card2); border:1px solid var(--border); padding:8px 18px; border-radius:10px; letter-spacing:1px;}
+.warn-tag{background:rgba(248,113,113,.15); color:var(--red); padding:4px 10px; border-radius:20px; font-size:11.5px; font-weight:700;}
+.up{color:var(--green); font-weight:700;}
+.down{color:var(--red); font-weight:700;}
+.flat{color:var(--muted);}
+
+.empty{text-align:center; color:var(--muted); padding:40px 0;}
+.pagerow{display:flex; align-items:center; justify-content:center; gap:14px; margin-top:12px; font-size:12.5px; color:var(--ink2);}
+.pagerow button{background:var(--card2); border:1px solid var(--border); color:var(--ink); padding:6px 14px; border-radius:8px; cursor:pointer;}
+.pagerow button:disabled{opacity:.35; cursor:default;}
+.voc-tag{padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700;}
+.voc-text-cell{max-width:340px; white-space:normal; text-align:left;}
+
+.plant-cardwall{display:grid; grid-template-columns:repeat(4,1fr); gap:12px;}
+@media (max-width:1100px){.plant-cardwall{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:640px){.plant-cardwall{grid-template-columns:1fr;}}
+.plant-card{background:var(--card2); border:1px solid var(--border); border-radius:12px; padding:14px;}
+.plant-card .pc-top{display:flex; align-items:center; justify-content:space-between;}
+.plant-card .pc-name{font-weight:800; font-size:13.5px;}
+.plant-card .pc-score{font-size:24px; font-weight:800; color:var(--teal); margin:6px 0 2px;}
+.plant-card .pc-meta{font-size:11px; color:var(--ink2);}
+.plant-card .track{margin-top:8px; height:8px; border-radius:6px; background:rgba(255,255,255,.06); overflow:hidden;}
+.plant-card .track .fill{height:100%; background:linear-gradient(90deg,var(--teal),var(--cyan));}
+
+.threshold-note{font-size:11px; color:var(--muted); margin-bottom:8px;}
+footer.foot{text-align:center; color:var(--muted); font-size:11.5px; padding:30px 0 10px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="brand">
+    <div class="logo">📡</div>
+    <div>
+      <div class="name">CSI 服務戰情系統</div>
+      <div class="sub">CUSTOMER SATISFACTION INDEX · COMMAND CENTER</div>
+    </div>
+  </div>
+  <div class="header-kpis" id="headerKpis"></div>
+  <div class="header-right">
+    <div class="dealer-seg" id="dealerSeg">
+      <button data-d="all" class="active">全部</button>
+      <button data-d="裕信">裕信</button>
+      <button data-d="裕信-2">裕信-2</button>
+    </div>
+    <div class="clock">
+      <b id="clockTime">--:--:--</b>
+      <span id="clockDate">----/--/-- (-)</span>
+    </div>
+    <div class="live"><span class="dot"></span>LIVE</div>
+  </div>
+</div>
+
+<div class="navtabs" id="navtabs"></div>
+
+<main id="main">
+  <section class="tab-panel" id="tab-overview"></section>
+  <section class="tab-panel" id="tab-monthly"></section>
+  <section class="tab-panel" id="tab-plant"></section>
+  <section class="tab-panel" id="tab-advisor"></section>
+  <section class="tab-panel" id="tab-tech"></section>
+  <section class="tab-panel" id="tab-plate"></section>
+  <section class="tab-panel" id="tab-voc"></section>
+  <section class="tab-panel" id="tab-paint"></section>
+  <section class="tab-panel" id="tab-warranty"></section>
+</main>
+
+<footer class="foot">CSI 服務戰情系統 · 資料範圍 <span id="footRange"></span> · 產生時間 <span id="footGen"></span></footer>
+
+<script src="records.js"></script>
+<script>
+(function(){
+"use strict";
+
+const DIMS = [
+  {k:'o', label:'整體滿意度', icon:'⭐', color:'#2dd4bf'},
+  {k:'r', label:'保修處理',   icon:'🔧', color:'#34d399'},
+  {k:'k', label:'結帳服務',   icon:'💳', color:'#fbbf24'},
+  {k:'x', label:'交修說明',   icon:'🗣️', color:'#a78bfa'},
+  {k:'l', label:'客休室',     icon:'🛋️', color:'#60a5fa'},
+];
+const RAW = (window.CSI_DATA && window.CSI_DATA.records) || [];
+const META = (window.CSI_DATA && window.CSI_DATA.meta) || {};
+const MONTHS = (META.months||[]).slice().sort();
+
+function fmtYM(ym){ if(!ym) return ''; return ym.slice(0,4)+'/'+ym.slice(4,6); }
+function fmtYM2(ym){ if(!ym) return ''; return ym.slice(2,4)+'/'+ym.slice(4,6); }
+function fmt2(n){ return (n==null || isNaN(n)) ? '—' : Number(n).toFixed(2); }
+function fmt3(n){ return (n==null || isNaN(n)) ? '—' : Number(n).toFixed(3); }
+function pct(n,d){ return d? (100*n/d).toFixed(1)+'%' : '0.0%'; }
+function scoreClass(v){
+  if(v==null) return '';
+  if(v>=4.95) return 'score-good';
+  if(v>=4.85) return 'score-warn';
+  return 'score-bad';
+}
+function pillClass(v){
+  if(v==null) return 'pill';
+  if(v>=4.95) return 'pill good';
+  if(v>=4.85) return 'pill warn';
+  return 'pill bad';
+}
+function mean(arr, key){
+  let s=0,n=0;
+  for(const r of arr){ const v=r[key]; if(v!=null){ s+=v; n++; } }
+  return n? s/n : null;
+}
+function dimStats(arr){
+  const out = {count: arr.length};
+  DIMS.forEach(d=> out[d.k] = mean(arr, d.k));
+  out.g = mean(arr, 'g');
+  return out;
+}
+function groupBy(arr, keyFn){
+  const m = new Map();
+  for(const r of arr){
+    const k = keyFn(r);
+    if(k==null) continue;
+    if(!m.has(k)) m.set(k, []);
+    m.get(k).push(r);
+  }
+  return m;
+}
+function medal(i){ return i===0?'🥇':i===1?'🥈':i===2?'🥉':''; }
+
+// ---------------- state ----------------
+const state = { dealer: 'all' };
+function dataset(){
+  if(state.dealer === 'all') return RAW;
+  return RAW.filter(r=> r.d === state.dealer);
+}
+
+// ---------------- lightweight SVG/CSS chart engine (no external deps) ----------------
+const SVGNS = "http://www.w3.org/2000/svg";
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+function niceTicks(min,max,n=4){
+  const arr=[]; for(let i=0;i<=n;i++) arr.push(min + (max-min)*i/n);
+  return arr;
+}
+function legendHtml(items){
+  return `<div style="display:flex;flex-wrap:wrap;gap:3px 12px;font-size:11px;color:var(--ink2);margin-bottom:8px;">${
+    items.map(it=>`<span style="display:inline-flex;align-items:center;gap:5px;"><i style="width:9px;height:9px;border-radius:2px;background:${it.color};display:inline-block;"></i>${esc(it.label)}</span>`).join('')
+  }</div>`;
+}
+function axisValLabel(v, isCount){ return isCount? Math.round(v).toLocaleString() : v.toFixed(2); }
+
+function drawLineChart(id, {labels, series, min, max, isCount=false, showLegend=true}){
+  const host = document.getElementById(id); if(!host) return;
+  const legend = showLegend ? legendHtml(series.map(s=>({label:s.label,color:s.color}))) : '';
+  const legendH = showLegend ? 24 : 0;
+  const w = Math.max(host.clientWidth||600, 300), h = Math.max((host.clientHeight||260)-legendH, 140);
+  const padL=44,padR=16,padT=12,padB=26;
+  const plotW=w-padL-padR, plotH=h-padT-padB;
+  const n = labels.length;
+  const x = i=> n<=1? padL+plotW/2 : padL + i*(plotW/(n-1));
+  const y = v=> padT + (1-((v-min)/(max-min||1)))*plotH;
+  const ticks = niceTicks(min,max,4);
+  let grid='';
+  ticks.forEach(t=>{
+    const yy=y(t);
+    grid += `<line x1="${padL}" y1="${yy}" x2="${w-padR}" y2="${yy}" stroke="rgba(255,255,255,.07)" stroke-width="1"/>`;
+    grid += `<text x="${padL-8}" y="${yy+3}" text-anchor="end" font-size="10" fill="#66708f">${axisValLabel(t,isCount)}</text>`;
+  });
+  const step = Math.max(1, Math.ceil(n/8));
+  let xlabels='';
+  labels.forEach((lb,i)=>{ if(i%step===0 || i===n-1) xlabels += `<text x="${x(i)}" y="${h-6}" text-anchor="middle" font-size="10" fill="#66708f">${esc(lb)}</text>`; });
+  let paths='';
+  series.forEach(s=>{
+    let d=''; let pts='';
+    s.data.forEach((v,i)=>{
+      if(v==null){ return; }
+      const px=x(i), py=y(Math.max(min,Math.min(max,v)));
+      d += (d===''||s.data[i-1]==null) ? `M${px},${py} ` : `L${px},${py} `;
+      pts += `<circle cx="${px}" cy="${py}" r="2.4" fill="${s.color}"/>`;
+    });
+    paths += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${pts}`;
+  });
+  host.innerHTML = legend + `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" xmlns="${SVGNS}">${grid}${paths}${xlabels}</svg>`;
+}
+
+function drawBarChart(id, {labels, values, color, isCount=true}){
+  const host = document.getElementById(id); if(!host) return;
+  const w = Math.max(host.clientWidth||600, 300), h = Math.max(host.clientHeight||260, 140);
+  const padL=44,padR=16,padT=12,padB=26;
+  const plotW=w-padL-padR, plotH=h-padT-padB;
+  const n = values.length;
+  const max = Math.max(...values,1) * 1.15;
+  const gap = plotW/n*0.28;
+  const bw = plotW/n - gap;
+  const y = v=> padT + (1-(v/max))*plotH;
+  const ticks = niceTicks(0,max,4);
+  let grid='';
+  ticks.forEach(t=>{
+    const yy=y(t);
+    grid += `<line x1="${padL}" y1="${yy}" x2="${w-padR}" y2="${yy}" stroke="rgba(255,255,255,.07)" stroke-width="1"/>`;
+    grid += `<text x="${padL-8}" y="${yy+3}" text-anchor="end" font-size="10" fill="#66708f">${axisValLabel(t,isCount)}</text>`;
+  });
+  const step = Math.max(1, Math.ceil(n/8));
+  let bars='', xlabels='';
+  values.forEach((v,i)=>{
+    const bx = padL + i*(plotW/n) + gap/2;
+    const by = y(v);
+    bars += `<rect x="${bx}" y="${by}" width="${bw}" height="${padT+plotH-by}" rx="3" fill="${color}"/>`;
+    if(i%step===0 || i===n-1) xlabels += `<text x="${bx+bw/2}" y="${h-6}" text-anchor="middle" font-size="10" fill="#66708f">${esc(labels[i])}</text>`;
+  });
+  host.innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" xmlns="${SVGNS}">${grid}${bars}${xlabels}</svg>`;
+}
+
+function drawGroupedBarChart(id, {labels, series, min, max}){
+  const host = document.getElementById(id); if(!host) return;
+  const legend = legendHtml(series.map(s=>({label:s.label,color:s.color})));
+  const w = Math.max(host.clientWidth||600, 300), h = Math.max((host.clientHeight||300)-24, 160);
+  const padL=44,padR=16,padT=12,padB=54;
+  const plotW=w-padL-padR, plotH=h-padT-padB;
+  const n = labels.length, sN = series.length;
+  const groupW = plotW/n;
+  const barW = groupW*0.8/sN;
+  const y = v=> padT + (1-((v-min)/(max-min||1)))*plotH;
+  const ticks = niceTicks(min,max,4);
+  let grid='';
+  ticks.forEach(t=>{
+    const yy=y(t);
+    grid += `<line x1="${padL}" y1="${yy}" x2="${w-padR}" y2="${yy}" stroke="rgba(255,255,255,.07)" stroke-width="1"/>`;
+    grid += `<text x="${padL-8}" y="${yy+3}" text-anchor="end" font-size="10" fill="#66708f">${axisValLabel(t,false)}</text>`;
+  });
+  let bars='', xlabels='';
+  labels.forEach((lb,gi)=>{
+    const gx = padL + gi*groupW + groupW*0.1;
+    series.forEach((s,si)=>{
+      const v = s.data[gi];
+      if(v==null) return;
+      const bx = gx + si*barW;
+      const by = y(Math.max(min,Math.min(max,v)));
+      bars += `<rect x="${bx}" y="${by}" width="${barW*0.85}" height="${padT+plotH-by}" rx="2" fill="${s.color}"/>`;
+    });
+    const cx = padL + gi*groupW + groupW/2;
+    xlabels += `<text x="${cx}" y="${h-padB+16}" text-anchor="end" font-size="10" fill="#66708f" transform="rotate(-40 ${cx} ${h-padB+16})">${esc(lb)}</text>`;
+  });
+  host.innerHTML = legend + `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" xmlns="${SVGNS}">${grid}${bars}${xlabels}</svg>`;
+}
+
+function drawHBarChart(id, {labels, values, color, min=0, max, isCount=false}){
+  const host = document.getElementById(id); if(!host) return;
+  const n = labels.length;
+  const rowH = 24;
+  const w = Math.max(host.clientWidth||600, 300);
+  const h = Math.max(n*rowH + 20, 60);
+  host.style.height = h+'px';
+  const padL=130,padR=48,padT=6;
+  const plotW=w-padL-padR;
+  const mx = max!=null? max : Math.max(...values,1)*1.05;
+  const x = v=> padL + ((v-min)/((mx-min)||1))*plotW;
+  let bars='';
+  values.forEach((v,i)=>{
+    const yy = padT + i*rowH;
+    const bx = x(Math.max(min,v));
+    const c = Array.isArray(color) ? (color[i]||'#2dd4bf') : color;
+    const label = (typeof v==='number')? (isCount? Math.round(v).toLocaleString() : v.toFixed(3)) : v;
+    bars += `<text x="${padL-8}" y="${yy+rowH*0.62}" text-anchor="end" font-size="11" fill="#c7ccd4">${esc(labels[i])}</text>`;
+    bars += `<rect x="${padL}" y="${yy+4}" width="${Math.max(2,bx-padL)}" height="${rowH-9}" rx="3" fill="${c}"/>`;
+    bars += `<text x="${bx+6}" y="${yy+rowH*0.62}" font-size="11" fill="#e8ecf7" font-weight="700">${label}</text>`;
+  });
+  host.innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" xmlns="${SVGNS}">${bars}</svg>`;
+}
+
+function drawDonut(id, segments){
+  const host = document.getElementById(id); if(!host) return;
+  const total = segments.reduce((s,x)=>s+x.count,0) || 1;
+  let acc=0;
+  const stops = segments.map(s=>{
+    const start=acc/total*360; acc+=s.count; const end=acc/total*360;
+    return `${s.color} ${start}deg ${end}deg`;
+  }).join(', ');
+  const legend = segments.map(s=>`<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin:6px 0;">
+    <i style="width:10px;height:10px;border-radius:3px;background:${s.color};display:inline-block;flex-shrink:0;"></i>
+    <span style="flex:1;color:var(--ink2);">${esc(s.label)}</span>
+    <b>${s.count.toLocaleString()}</b>
+    <span style="color:var(--muted);width:52px;text-align:right;">${pct(s.count,total)}</span>
+  </div>`).join('');
+  host.innerHTML = `
+    <div style="display:flex;align-items:center;gap:22px;height:100%;">
+      <div style="position:relative;width:150px;height:150px;flex-shrink:0;">
+        <div style="width:100%;height:100%;border-radius:50%;background:conic-gradient(${stops});"></div>
+        <div style="position:absolute;inset:24px;border-radius:50%;background:#131c3a;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+          <b style="font-size:18px;">${total.toLocaleString()}</b><span style="font-size:9.5px;color:var(--muted);">總筆數</span>
+        </div>
+      </div>
+      <div style="flex:1;min-width:0;">${legend}</div>
+    </div>`;
+}
+
+// ================= HEADER =================
+function renderHeader(){
+  const ds = dataset();
+  const total = ds.length;
+  const uniquePlates = new Set(ds.map(r=>r.p)).size;
+  const overallAvg = mean(ds,'g');
+  const perfect = ds.filter(r=> r.g!=null && r.g>=4.999).length;
+  const perfectRate = total? (100*perfect/total).toFixed(1)+'%' : '0.0%';
+  const range = MONTHS.length? fmtYM(MONTHS[0])+'–'+fmtYM(MONTHS[MONTHS.length-1]) : '—';
+  document.getElementById('headerKpis').innerHTML = `
+    <div class="hkpi"><b>${total.toLocaleString()}</b><span>累計筆數</span></div>
+    <div class="hkpi"><b>${fmt3(overallAvg)}</b><span>整體均分</span></div>
+    <div class="hkpi"><b>${perfectRate}</b><span>滿分率</span></div>
+    <div class="hkpi"><b>${range}</b><span>資料期間</span></div>
+  `;
+  document.getElementById('footRange').textContent = range;
+  document.getElementById('footGen').textContent = META.generated_at || '';
+}
+
+// ================= CLOCK =================
+function tickClock(){
+  const d = new Date();
+  const wd = ['日','一','二','三','四','五','六'][d.getDay()];
+  const p = n=>String(n).padStart(2,'0');
+  document.getElementById('clockTime').textContent = `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  document.getElementById('clockDate').textContent = `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} (${wd})`;
+}
+setInterval(tickClock, 1000); tickClock();
+
+// ================= TABS =================
+const TABS = [
+  {id:'overview', icon:'📊', label:'總覽儀表板', render:renderOverview},
+  {id:'monthly',  icon:'📈', label:'月度趨勢',   render:renderMonthly},
+  {id:'plant',    icon:'🏭', label:'廠區分析',   render:renderPlant},
+  {id:'advisor',  icon:'👤', label:'服務顧問',   render:renderAdvisor},
+  {id:'tech',     icon:'🔧', label:'技師績效',   render:renderTech},
+  {id:'plate',    icon:'🔍', label:'車牌查詢',   render:renderPlateTab},
+  {id:'voc',      icon:'🗣️', label:'VOC客戶聲音', render:renderVoc},
+  {id:'paint',    icon:'🎨', label:'鈑噴分析',   render:renderCategoryTab.bind(null,'鈑噴','paint')},
+  {id:'warranty', icon:'🔒', label:'保固分析',   render:renderCategoryTab.bind(null,'保固','warranty')},
+];
+let currentTab = 'overview';
+function buildNav(){
+  const nav = document.getElementById('navtabs');
+  nav.innerHTML = TABS.map(t=>`<div class="navtab" data-id="${t.id}">${t.icon} ${t.label}</div>`).join('');
+  nav.querySelectorAll('.navtab').forEach(el=>{
+    el.addEventListener('click', ()=> switchTab(el.dataset.id));
+  });
+}
+function switchTab(id){
+  currentTab = id;
+  document.querySelectorAll('.navtab').forEach(el=> el.classList.toggle('active', el.dataset.id===id));
+  document.querySelectorAll('.tab-panel').forEach(el=> el.classList.toggle('active', el.id==='tab-'+id));
+  const t = TABS.find(t=>t.id===id);
+  if(t) t.render();
+}
+document.getElementById('dealerSeg').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button'); if(!btn) return;
+  state.dealer = btn.dataset.d;
+  document.querySelectorAll('.dealer-seg button').forEach(b=> b.classList.toggle('active', b===btn));
+  renderHeader();
+  const t = TABS.find(t=>t.id===currentTab);
+  if(t) t.render();
+});
+
+// ================= TAB 1: OVERVIEW =================
+function renderOverview(){
+  const ds = dataset();
+  const el = document.getElementById('tab-overview');
+  const total = ds.length;
+  const uniquePlates = new Set(ds.map(r=>r.p)).size;
+  const stats = dimStats(ds);
+  const perfect = ds.filter(r=> r.g!=null && r.g>=4.999).length;
+  const perfectRate = total? (100*perfect/total).toFixed(1) : '0.0';
+
+  const plantsMap = groupBy(ds, r=>r.f);
+  const plantRows = Array.from(plantsMap.entries()).map(([plant, arr])=>({plant, ...dimStats(arr)}))
+    .sort((a,b)=> (b.g||0)-(a.g||0));
+
+  el.innerHTML = `
+    <div class="grid grid-4">
+      <div class="card kpi"><div class="ic">🚗</div><div class="num">${total.toLocaleString()}</div><div class="lbl">累計進廠筆數</div></div>
+      <div class="card kpi"><div class="ic">🔑</div><div class="num">${uniquePlates.toLocaleString()}</div><div class="lbl">不重複車牌數</div></div>
+      <div class="card kpi"><div class="ic">⭐</div><div class="num">${fmt3(stats.o)}</div><div class="lbl">整體滿意均分</div></div>
+      <div class="card kpi"><div class="ic">🔧</div><div class="num">${fmt3(stats.r)}</div><div class="lbl">保修處理均分</div></div>
+      <div class="card kpi"><div class="ic">💳</div><div class="num">${fmt3(stats.k)}</div><div class="lbl">結帳服務均分</div></div>
+      <div class="card kpi"><div class="ic">🗣️</div><div class="num">${fmt3(stats.x)}</div><div class="lbl">交修說明均分</div></div>
+      <div class="card kpi"><div class="ic">🛋️</div><div class="num">${fmt3(stats.l)}</div><div class="lbl">客休室均分</div></div>
+      <div class="card kpi purple"><div class="ic">🏆</div><div class="num">${perfectRate}%</div><div class="lbl">1000分滿分率</div></div>
+    </div>
+
+    <div class="grid grid-2" style="margin-top:16px;">
+      <div class="card">
+        <h3>📐 各指標平均分 <span class="tag">${MONTHS.length}個月全數據</span></h3>
+        ${DIMS.map(d=>{
+          const v = stats[d.k]||0;
+          const base=3.5, span=5-base;
+          const w = Math.max(0, Math.min(100, (v-base)/span*100));
+          return `<div class="barrow"><div class="lbl">${d.icon} ${d.label}</div><div class="track"><div class="fill" style="width:${w}%"></div></div><div class="val ${scoreClass(v)}">${fmt3(v)}</div></div>`;
+        }).join('')}
+      </div>
+      <div class="card">
+        <h3>🍩 整體分數分佈</h3>
+        <div class="chart-wrap"><div id="ov-donut"></div></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h3>🏭 各廠五項分項成績 <span class="tag">共 ${plantRows.length} 廠</span></h3>
+      <div class="tablewrap"><table id="ov-plant-table">
+        <thead><tr><th>排名</th><th>廠區</th><th>整體</th><th>保修</th><th>結帳</th><th>交修</th><th>客休</th><th>均總分</th><th>筆數</th></tr></thead>
+        <tbody>
+          ${plantRows.map((p,i)=>`<tr>
+            <td>${medal(i)||('#'+(i+1))}</td>
+            <td class="name">${p.plant}</td>
+            <td class="${scoreClass(p.o)}">${fmt3(p.o)}</td>
+            <td class="${scoreClass(p.r)}">${fmt3(p.r)}</td>
+            <td class="${scoreClass(p.k)}">${fmt3(p.k)}</td>
+            <td class="${scoreClass(p.x)}">${fmt3(p.x)}</td>
+            <td class="${scoreClass(p.l)}">${fmt3(p.l)}</td>
+            <td><span class="${pillClass(p.g)}">${fmt3(p.g)}</span></td>
+            <td>${p.count}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>
+  `;
+
+  // donut
+  const c0 = ds.filter(r=>r.g!=null && r.g<3).length;
+  const c1 = ds.filter(r=>r.g!=null && r.g>=3 && r.g<4).length;
+  const c2 = ds.filter(r=>r.g!=null && r.g>=4 && r.g<4.5).length;
+  const c3 = ds.filter(r=>r.g!=null && r.g>=4.5 && r.g<4.999).length;
+  const c4 = ds.filter(r=>r.g!=null && r.g>=4.999).length;
+  drawDonut('ov-donut', [
+    {label:'3以下', count:c0, color:'#f87171'},
+    {label:'3-4',   count:c1, color:'#fb923c'},
+    {label:'4-4.5', count:c2, color:'#fbbf24'},
+    {label:'4.5-5', count:c3, color:'#a3e635'},
+    {label:'5分',   count:c4, color:'#34d399'},
+  ]);
+}
+
+// ================= TAB 2: MONTHLY =================
+function renderMonthly(){
+  const ds = dataset();
+  const el = document.getElementById('tab-monthly');
+  const byMonth = groupBy(ds, r=>r.y);
+  const rows = MONTHS.filter(m=>byMonth.has(m)).map(m=>({ym:m, ...dimStats(byMonth.get(m))}));
+
+  el.innerHTML = `
+    <div class="grid grid-2">
+      <div class="card"><h3>📈 五項指標月度趨勢</h3><div class="chart-wrap tall"><div id="mo-lines"></div></div></div>
+      <div class="card"><h3>📊 月度進廠量</h3><div class="chart-wrap tall"><div id="mo-bars"></div></div></div>
+    </div>
+    <div class="card" style="margin-top:16px;"><h3>📉 均總分走勢</h3><div class="chart-wrap short"><div id="mo-avgline"></div></div></div>
+    <div class="card" style="margin-top:16px;">
+      <h3>🗓️ 月度明細表</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>年月</th><th>筆數</th><th>整體</th><th>保修</th><th>結帳</th><th>交修</th><th>客休</th><th>均總分</th></tr></thead>
+        <tbody>${rows.map(r=>`<tr>
+          <td>${fmtYM(r.ym)}</td><td>${r.count}</td>
+          <td class="${scoreClass(r.o)}">${fmt3(r.o)}</td>
+          <td class="${scoreClass(r.r)}">${fmt3(r.r)}</td>
+          <td class="${scoreClass(r.k)}">${fmt3(r.k)}</td>
+          <td class="${scoreClass(r.x)}">${fmt3(r.x)}</td>
+          <td class="${scoreClass(r.l)}">${fmt3(r.l)}</td>
+          <td><span class="${pillClass(r.g)}">${fmt3(r.g)}</span></td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>
+  `;
+
+  const labels = rows.map(r=>fmtYM2(r.ym));
+  drawLineChart('mo-lines', { labels, min:3.5, max:5, series: DIMS.map(d=>({ label:d.label, color:d.color, data:rows.map(r=>r[d.k]) })) });
+  drawBarChart('mo-bars', { labels, values: rows.map(r=>r.count), color:'#22d3ee', isCount:true });
+  drawLineChart('mo-avgline', { labels, min:3.5, max:5, showLegend:false, series:[{label:'均總分', color:'#34d399', data:rows.map(r=>r.g)}] });
+}
+
+// ================= TAB 3: PLANT =================
+function renderPlant(){
+  const ds = dataset();
+  const el = document.getElementById('tab-plant');
+  const map = groupBy(ds, r=>r.f);
+  const rows = Array.from(map.entries()).map(([plant, arr])=>({plant, ...dimStats(arr)})).sort((a,b)=>(b.g||0)-(a.g||0));
+  const maxG = Math.max(...rows.map(r=>r.g||0), 0.01);
+
+  el.innerHTML = `
+    <div class="plant-cardwall">
+      ${rows.map((r,i)=>`<div class="plant-card">
+        <div class="pc-top"><div class="pc-name">${medal(i)} ${r.plant}</div><span class="${pillClass(r.g)}">${fmt3(r.g)}</span></div>
+        <div class="pc-score">${fmt3(r.o)}</div>
+        <div class="pc-meta">筆數 ${r.count} · 均總分 ${fmt3(r.g)}</div>
+        <div class="track"><div class="fill" style="width:${(r.g/5*100)||0}%"></div></div>
+      </div>`).join('')}
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <h3>🏭 廠區五項指標比較</h3>
+      <div class="chart-wrap tall"><div id="pl-bars"></div></div>
+    </div>
+  `;
+  drawGroupedBarChart('pl-bars', { labels: rows.map(r=>r.plant), min:3.5, max:5,
+    series: DIMS.map(d=>({ label:d.label, color:d.color, data: rows.map(r=>r[d.k]) })) });
+}
+
+// ================= TAB 4/5: ADVISOR & TECH =================
+function renderPersonTab(field, threshold, containerId){
+  const ds = dataset();
+  const map = groupBy(ds, r=>r[field]);
+  let rows = Array.from(map.entries()).map(([name, arr])=>({name, ...dimStats(arr)}));
+  const totalPeople = rows.length;
+  rows = rows.filter(r=> r.count >= threshold).sort((a,b)=>(b.g||0)-(a.g||0));
+  const top20 = rows.slice(0,20);
+  return {rows, totalPeople, top20};
+}
+function renderAdvisor(){ renderPersonList('a', 50, 'tab-advisor', '服務顧問'); }
+function renderTech(){ renderPersonList('t', 20, 'tab-tech', '技師'); }
+function renderPersonList(field, threshold, tabId, labelName){
+  const el = document.getElementById(tabId);
+  const {rows, totalPeople, top20} = renderPersonTab(field, threshold);
+  el.innerHTML = `
+    <div class="card">
+      <h3>${labelName==='服務顧問'?'👤':'🔧'} 全體${labelName}成績表 <span class="tag">有效樣本 ${rows.length} 人（≥${threshold}筆），全體 ${totalPeople} 人</span></h3>
+      <div class="threshold-note">僅列出樣本數 ≥ ${threshold} 筆的${labelName}，避免筆數過少造成排名失真。</div>
+      <div class="tablewrap" style="max-height:520px; overflow-y:auto;"><table>
+        <thead><tr><th>排名</th><th>${labelName}</th><th>整體</th><th>保修</th><th>結帳</th><th>交修</th><th>客休</th><th>均總分</th><th>筆數</th></tr></thead>
+        <tbody>${rows.map((r,i)=>`<tr>
+          <td>${medal(i)||('#'+(i+1))}</td><td class="name">${r.name}</td>
+          <td class="${scoreClass(r.o)}">${fmt3(r.o)}</td>
+          <td class="${scoreClass(r.r)}">${fmt3(r.r)}</td>
+          <td class="${scoreClass(r.k)}">${fmt3(r.k)}</td>
+          <td class="${scoreClass(r.x)}">${fmt3(r.x)}</td>
+          <td class="${scoreClass(r.l)}">${fmt3(r.l)}</td>
+          <td><span class="${pillClass(r.g)}">${fmt3(r.g)}</span></td>
+          <td>${r.count}</td>
+        </tr>`).join('') || `<tr><td colspan="9" class="empty">無符合門檻的資料</td></tr>`}</tbody>
+      </table></div>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <h3>📊 ${labelName}整體得分前20名</h3>
+      <div><div id="${tabId}-bar"></div></div>
+    </div>
+  `;
+  drawHBarChart(tabId+'-bar', { labels: top20.map(r=>r.name), values: top20.map(r=>r.g), color:'#2dd4bf', min:3.5, max:5 });
+}
+
+// ================= TAB 6: PLATE LOOKUP =================
+function renderPlateTab(){
+  const el = document.getElementById('tab-plate');
+  el.innerHTML = `
+    <div class="card">
+      <h3>🔍 車牌查詢</h3>
+      <div class="searchbar">
+        <input type="text" id="plateInput" placeholder="請輸入車牌，例如：3665-L7 / ABC-1234">
+        <button id="plateBtn">查詢</button>
+      </div>
+      <div id="plateResult"></div>
+    </div>
+  `;
+  const input = document.getElementById('plateInput');
+  const btn = document.getElementById('plateBtn');
+  const go = ()=> doPlateSearch(input.value.trim());
+  btn.addEventListener('click', go);
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter') go(); });
+}
+function doPlateSearch(q){
+  const box = document.getElementById('plateResult');
+  if(!q){ box.innerHTML=''; return; }
+  const ds = dataset();
+  const norm = s => (s||'').toUpperCase().replace(/\s/g,'');
+  const hits = ds.filter(r=> norm(r.p) === norm(q));
+  if(!hits.length){
+    box.innerHTML = `<div class="empty">查無「${q}」的進廠紀錄</div>`;
+    return;
+  }
+  hits.sort((a,b)=> (a.e||'').localeCompare(b.e||''));
+  const stats = dimStats(hits);
+  const last = hits[hits.length-1];
+  const prev = hits.length>1 ? hits[hits.length-2] : null;
+  const declining = prev && last.g!=null && prev.g!=null && last.g < prev.g;
+
+  let rowsHtml = '';
+  hits.forEach((r,i)=>{
+    const p = i>0? hits[i-1] : null;
+    const deltaCell = (key)=>{
+      if(!p || r[key]==null || p[key]==null) return '<span class="flat">—</span>';
+      const diff = +(r[key]-p[key]).toFixed(2);
+      if(diff>0) return `<span class="up">▲${diff.toFixed(2)}</span>`;
+      if(diff<0) return `<span class="down">▼${Math.abs(diff).toFixed(2)}</span>`;
+      return '<span class="flat">持平</span>';
+    };
+    rowsHtml += `<tr>
+      <td>${i+1}</td><td>${fmtYM(r.y)}</td><td class="name">${r.f}</td><td>${r.e||'—'}</td>
+      <td><span class="${pillClass(r.g)}">${fmt3(r.g)}</span></td>
+      <td class="${scoreClass(r.o)}">${fmt3(r.o)}<br>${deltaCell('o')}</td>
+      <td class="${scoreClass(r.r)}">${fmt3(r.r)}<br>${deltaCell('r')}</td>
+      <td class="${scoreClass(r.k)}">${fmt3(r.k)}<br>${deltaCell('k')}</td>
+      <td class="${scoreClass(r.x)}">${fmt3(r.x)}<br>${deltaCell('x')}</td>
+      <td class="${scoreClass(r.l)}">${fmt3(r.l)}<br>${deltaCell('l')}</td>
+    </tr>`;
+  });
+
+  box.innerHTML = `
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:14px 0;">
+      <div class="plate-badge">${last.p}</div>
+      <span class="pill good">共 ${hits.length} 次進廠</span>
+      ${declining? '<span class="warn-tag">📉 分數下滑</span>' : ''}
+    </div>
+    <div class="grid grid-4">
+      <div class="card kpi"><div class="num">${fmt3(stats.o)}</div><div class="lbl">整體均分</div></div>
+      <div class="card kpi"><div class="num">${fmt3(stats.r)}</div><div class="lbl">保修處理均分</div></div>
+      <div class="card kpi"><div class="num">${fmt3(stats.k)}</div><div class="lbl">結帳服務均分</div></div>
+      <div class="card kpi"><div class="num">${fmt3(stats.x)}</div><div class="lbl">交修說明均分</div></div>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <h3>📋 歷次進廠明細（分數旁為與上一次比較）</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>次序</th><th>年月</th><th>服務廠</th><th>出廠日期</th><th>均總分</th><th>整體</th><th>保修</th><th>結帳</th><th>交修</th><th>客休</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table></div>
+    </div>
+  `;
+}
+
+// ================= TAB 7: VOC =================
+let vocPage = 1;
+const VOC_PAGE_SIZE = 20;
+let vocFilters = {plant:'all', cat:'all', month:'all', kw:''};
+function renderVoc(){
+  const el = document.getElementById('tab-voc');
+  const ds = dataset();
+  const vocAll = ds.filter(r=> r.v);
+  const catMap = groupBy(vocAll, r=>r.vc);
+  const cats = Array.from(catMap.entries()).map(([cat,arr])=>({cat, count:arr.length})).sort((a,b)=>b.count-a.count);
+  const plantCounts = groupBy(vocAll, r=>r.f);
+  const topPlant = Array.from(plantCounts.entries()).sort((a,b)=>b[1].length-a[1].length)[0];
+  const latestMonth = vocAll.length? vocAll.map(r=>r.y).sort().slice(-1)[0] : null;
+
+  const plants = Array.from(new Set(ds.map(r=>r.f))).sort();
+  const catNames = Array.from(new Set(vocAll.map(r=>r.vc))).sort();
+
+  el.innerHTML = `
+    <div class="grid grid-4">
+      <div class="card kpi"><div class="ic">🗣️</div><div class="num">${vocAll.length}</div><div class="lbl">VOC回饋總筆數</div></div>
+      <div class="card kpi"><div class="ic">🏷️</div><div class="num">${cats.length}</div><div class="lbl">分類類別數</div></div>
+      <div class="card kpi"><div class="ic">🏭</div><div class="num" style="font-size:18px;">${topPlant? topPlant[0]:'—'}</div><div class="lbl">回饋最多廠</div></div>
+      <div class="card kpi"><div class="ic">🗓️</div><div class="num" style="font-size:18px;">${latestMonth? fmtYM(latestMonth):'—'}</div><div class="lbl">最新月份</div></div>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <h3>📊 VOC 分群統計</h3>
+      <div><div id="voc-bars"></div></div>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <h3>📋 VOC 總表</h3>
+      <div class="searchbar">
+        <select id="vocPlant"><option value="all">全部廠區</option>${plants.map(p=>`<option value="${p}">${p}</option>`).join('')}</select>
+        <select id="vocCat"><option value="all">全部類別</option>${catNames.map(c=>`<option value="${c}">${c}</option>`).join('')}</select>
+        <select id="vocMonth"><option value="all">全部月份</option>${MONTHS.map(m=>`<option value="${m}">${fmtYM(m)}</option>`).join('')}</select>
+        <input type="text" id="vocKw" placeholder="關鍵字搜尋...">
+      </div>
+      <div id="vocTableWrap"></div>
+      <div class="pagerow" id="vocPager"></div>
+    </div>
+  `;
+
+  const catColors = {'維修品質/技術':'#f87171','服務態度/人員':'#fbbf24','客休室/等候環境':'#60a5fa','費用/結帳':'#a78bfa',
+    '車載系統/導航':'#22d3ee','等待時間/準時':'#fb7185','溝通/說明':'#34d399','設施/環境硬體':'#fb923c','其他建議':'#98a2c0'};
+  drawHBarChart('voc-bars', { labels: cats.map(c=>c.cat), values: cats.map(c=>c.count),
+    color: cats.map(c=>catColors[c.cat]||'#2dd4bf'), min:0, isCount:true });
+
+  vocPage = 1;
+  vocFilters = {plant:'all', cat:'all', month:'all', kw:''};
+  ['vocPlant','vocCat','vocMonth'].forEach(id=>{
+    document.getElementById(id).addEventListener('change', e=>{
+      vocFilters[id.replace('voc','').toLowerCase()] = e.target.value;
+      vocPage = 1; drawVocTable(vocAll);
+    });
+  });
+  document.getElementById('vocKw').addEventListener('input', e=>{ vocFilters.kw = e.target.value; vocPage=1; drawVocTable(vocAll); });
+  drawVocTable(vocAll);
+}
+function drawVocTable(vocAll){
+  let rows = vocAll;
+  if(vocFilters.plant!=='all') rows = rows.filter(r=>r.f===vocFilters.plant);
+  if(vocFilters.cat!=='all') rows = rows.filter(r=>r.vc===vocFilters.cat);
+  if(vocFilters.month!=='all') rows = rows.filter(r=>r.y===vocFilters.month);
+  if(vocFilters.kw) rows = rows.filter(r=> (r.v||'').includes(vocFilters.kw));
+  rows = rows.slice().sort((a,b)=> (b.e||'').localeCompare(a.e||''));
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / VOC_PAGE_SIZE));
+  vocPage = Math.min(vocPage, totalPages);
+  const start = (vocPage-1)*VOC_PAGE_SIZE;
+  const pageRows = rows.slice(start, start+VOC_PAGE_SIZE);
+
+  document.getElementById('vocTableWrap').innerHTML = `
+    <div class="tablewrap"><table>
+      <thead><tr><th>月份</th><th>車牌</th><th>廠區</th><th>服務顧問</th><th>分類</th><th>客戶回饋內容</th></tr></thead>
+      <tbody>${pageRows.map(r=>`<tr>
+        <td>${fmtYM(r.y)}</td><td>${r.p}</td><td class="name">${r.f}</td><td class="name">${r.a||'—'}</td>
+        <td><span class="voc-tag" style="background:rgba(255,255,255,.08)">${r.vc}</span></td>
+        <td class="voc-text-cell">${r.v}</td>
+      </tr>`).join('') || `<tr><td colspan="6" class="empty">查無符合條件的回饋</td></tr>`}</tbody>
+    </table></div>
+  `;
+  document.getElementById('vocPager').innerHTML = `
+    <button ${vocPage<=1?'disabled':''} id="vocPrev">上一頁</button>
+    <span>共 ${rows.length} 筆｜第 ${vocPage}/${totalPages} 頁</span>
+    <button ${vocPage>=totalPages?'disabled':''} id="vocNext">下一頁</button>
+  `;
+  const prev = document.getElementById('vocPrev'), next = document.getElementById('vocNext');
+  if(prev) prev.addEventListener('click', ()=>{ vocPage--; drawVocTable(vocAll); });
+  if(next) next.addEventListener('click', ()=>{ vocPage++; drawVocTable(vocAll); });
+}
+
+// ================= TAB 8/9: CATEGORY (鈑噴/保固) =================
+function renderCategoryTab(category, tabId){
+  const el = document.getElementById('tab-'+tabId);
+  const ds = dataset().filter(r=> r.c === category);
+  const icon = category==='鈑噴' ? '🎨' : '🔒';
+  const stats = dimStats(ds);
+  const byPlant = groupBy(ds, r=>r.f);
+  const plantRows = Array.from(byPlant.entries()).map(([plant,arr])=>({plant, ...dimStats(arr)})).sort((a,b)=>(b.g||0)-(a.g||0));
+  const byMonth = groupBy(ds, r=>r.y);
+  const monthRows = MONTHS.filter(m=>byMonth.has(m)).map(m=>({ym:m, ...dimStats(byMonth.get(m))}));
+  const top5Plants = plantRows.slice(0,5).map(p=>p.plant);
+
+  el.innerHTML = `
+    <div class="grid grid-4">
+      <div class="card kpi"><div class="ic">${icon}</div><div class="num">${ds.length}</div><div class="lbl">${category}總筆數</div></div>
+      <div class="card kpi"><div class="ic">⭐</div><div class="num">${fmt3(stats.g)}</div><div class="lbl">${category}均總分</div></div>
+      <div class="card kpi"><div class="ic">🏆</div><div class="num" style="font-size:18px;">${plantRows[0]? plantRows[0].plant : '—'}</div><div class="lbl">最高分廠</div></div>
+      <div class="card kpi"><div class="ic">⚠️</div><div class="num" style="font-size:18px;">${plantRows.length? plantRows[plantRows.length-1].plant : '—'}</div><div class="lbl">最低分廠</div></div>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <h3>${icon} 各廠${category}成績排序</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>排名</th><th>廠區</th><th>整體</th><th>保修</th><th>結帳</th><th>交修</th><th>客休</th><th>均總分</th><th>筆數</th></tr></thead>
+        <tbody>${plantRows.map((r,i)=>`<tr>
+          <td>${medal(i)||('#'+(i+1))}</td><td class="name">${r.plant}</td>
+          <td class="${scoreClass(r.o)}">${fmt3(r.o)}</td><td class="${scoreClass(r.r)}">${fmt3(r.r)}</td>
+          <td class="${scoreClass(r.k)}">${fmt3(r.k)}</td><td class="${scoreClass(r.x)}">${fmt3(r.x)}</td>
+          <td class="${scoreClass(r.l)}">${fmt3(r.l)}</td>
+          <td><span class="${pillClass(r.g)}">${fmt3(r.g)}</span></td><td>${r.count}</td>
+        </tr>`).join('') || `<tr><td colspan="9" class="empty">此分類尚無資料</td></tr>`}</tbody>
+      </table></div>
+    </div>
+    <div class="grid grid-2" style="margin-top:16px;">
+      <div class="card"><h3>📈 ${category}月度趨勢</h3><div class="chart-wrap"><div id="${tabId}-trend"></div></div></div>
+      <div class="card"><h3>🏭 各廠${category}月度推移（前5廠）</h3><div class="chart-wrap"><div id="${tabId}-byplant"></div></div></div>
+    </div>
+  `;
+
+  const labels = monthRows.map(r=>fmtYM2(r.ym));
+  drawLineChart(tabId+'-trend', { labels, min:3.5, max:5, showLegend:false, series:[{label:'均總分', color:'#2dd4bf', data:monthRows.map(r=>r.g)}] });
+
+  const palette = ['#2dd4bf','#fbbf24','#a78bfa','#60a5fa','#f87171'];
+  const byPlantMonth = top5Plants.map((plant,idx)=>{
+    const arr = ds.filter(r=>r.f===plant);
+    const m = groupBy(arr, r=>r.y);
+    return { label:plant, color:palette[idx%palette.length],
+      data: MONTHS.map(mm=> m.has(mm)? mean(m.get(mm),'g') : null) };
+  });
+  drawLineChart(tabId+'-byplant', { labels: MONTHS.map(fmtYM2), min:3, max:5, series: byPlantMonth });
+}
+
+// ================= INIT =================
+buildNav();
+renderHeader();
+switchTab('overview');
+
+})();
+</script>
+</body>
+</html>
