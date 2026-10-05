@@ -681,6 +681,58 @@ function renderOverview(){
 }
 
 // ================= TAB 2: MONTHLY =================
+const moCtl = { metric:'g', cat:'all' };
+const MO_METRICS = [
+  {k:'g', label:'均總分'}, {k:'o', label:'整體滿意度'}, {k:'r', label:'保修處理'},
+  {k:'k', label:'結帳服務'}, {k:'x', label:'交修說明'}, {k:'l', label:'客休室'}, {k:'count', label:'進廠筆數'},
+];
+function autoRange(valueLists, pad=0.02){
+  let mn=Infinity, mx=-Infinity;
+  valueLists.forEach(a=>a.forEach(v=>{ if(v!=null){ if(v<mn) mn=v; if(v>mx) mx=v; } }));
+  if(!isFinite(mn)) return {min:3.5, max:5};
+  mn = Math.max(0, Math.floor((mn-pad)*20)/20);
+  mx = Math.min(5, Math.ceil((mx+0.005)*20)/20);
+  if(mx-mn < 0.1) mn = Math.max(0, mx-0.1);
+  return {min:mn, max:mx};
+}
+function heatStyle(v, metric){
+  if(v==null) return '';
+  if(metric==='count') return '';
+  if(v>=4.95) return 'background:rgba(52,211,153,.16);color:var(--green);';
+  if(v>=4.85) return 'background:rgba(251,191,36,.16);color:var(--amber);';
+  return 'background:rgba(248,113,113,.2);color:var(--red);';
+}
+function drawMoMatrix(){
+  const host = document.getElementById('moMatrix'); if(!host) return;
+  let ds = dataset();
+  if(moCtl.cat!=='all') ds = ds.filter(r=>r.c===moCtl.cat);
+  const months = MONTHS.filter(m=> m>=state.monthFrom && m<=state.monthTo);
+  const metric = moCtl.metric, isCount = metric==='count';
+  const val = arr => isCount ? arr.length : mean(arr, metric);
+  const fmtV = v => v==null ? '<span style="color:var(--muted)">—</span>' : (isCount ? v.toLocaleString() : v.toFixed(3));
+  const byPlant = groupBy(ds, r=>r.f);
+  const plants = Array.from(byPlant.keys()).sort((a,b)=>{
+    const va = val(byPlant.get(a)), vb = val(byPlant.get(b));
+    return (vb??-1)-(va??-1);
+  });
+  const rowHtml = (name, arr, strong) => {
+    const bm = groupBy(arr, r=>r.y);
+    const cells = months.map(m=>{
+      const a = bm.get(m);
+      if(!a) return '<td><span style="color:var(--muted)">—</span></td>';
+      const v = val(a);
+      const small = !isCount && a.length < 5;
+      return `<td style="${heatStyle(v,metric)}${small?'opacity:.55;':''}" title="${name} ${fmtYM(m)}：${isCount? v+' 筆' : v.toFixed(3)+'（'+a.length+' 筆）'}">${fmtV(v)}</td>`;
+    }).join('');
+    const total = val(arr);
+    return `<tr${strong?' style="background:rgba(45,212,191,.07);font-weight:800;"':''}><td class="name" style="position:sticky;left:0;background:var(--card);z-index:1;">${name}</td>${cells}<td style="${heatStyle(total,metric)}font-weight:800;">${fmtV(total)}</td></tr>`;
+  };
+  host.innerHTML = `<div class="tablewrap" style="max-height:560px;overflow:auto;"><table>
+    <thead><tr><th style="left:0;z-index:2;">廠區</th>${months.map(m=>`<th>${fmtYM2(m)}</th>`).join('')}<th>合計</th></tr></thead>
+    <tbody>${rowHtml('全部廠區', ds, true)}${plants.map(p=>rowHtml(p, byPlant.get(p), false)).join('') || `<tr><td colspan="${months.length+2}" class="empty">無資料</td></tr>`}</tbody>
+  </table></div>
+  <div class="threshold-note" style="margin-top:8px;">${isCount? '' : '顏色：≥4.95 綠、4.85–4.95 黃、<4.85 紅；單月樣本 &lt;5 筆者淡化顯示（滑鼠移到格子可看筆數）。'}　目前篩選：${moCtl.cat==='all'?'全部分類':moCtl.cat}・${MO_METRICS.find(x=>x.k===metric).label}</div>`;
+}
 function renderMonthly(){
   const ds = dataset();
   const el = document.getElementById('tab-monthly');
@@ -688,7 +740,15 @@ function renderMonthly(){
   const rows = MONTHS.filter(m=>byMonth.has(m)).map(m=>({ym:m, ...dimStats(byMonth.get(m))}));
 
   el.innerHTML = `
-    <div class="grid grid-2">
+    <div class="card">
+      <h3>🏭 各廠 × 月份成績矩陣 <span class="tag">依選擇的指標與分類即時計算</span></h3>
+      <div class="searchbar" style="margin-bottom:10px;">
+        <select id="moMetric">${MO_METRICS.map(m=>`<option value="${m.k}" ${m.k===moCtl.metric?'selected':''}>指標：${m.label}</option>`).join('')}</select>
+        <select id="moCat">${['all','一般保修','鈑噴','保固'].map(c=>`<option value="${c}" ${c===moCtl.cat?'selected':''}>${c==='all'?'分類：全部':'分類：'+c}</option>`).join('')}</select>
+      </div>
+      <div id="moMatrix"></div>
+    </div>
+    <div class="grid grid-2" style="margin-top:16px;">
       <div class="card"><h3>📈 五項指標月度趨勢</h3><div class="chart-wrap tall"><div id="mo-lines"></div></div></div>
       <div class="card"><h3>📊 月度進廠量</h3><div class="chart-wrap tall"><div id="mo-bars"></div></div></div>
     </div>
@@ -709,11 +769,16 @@ function renderMonthly(){
       </table></div>
     </div>
   `;
+  document.getElementById('moMetric').addEventListener('change', e=>{ moCtl.metric = e.target.value; drawMoMatrix(); });
+  document.getElementById('moCat').addEventListener('change', e=>{ moCtl.cat = e.target.value; drawMoMatrix(); });
+  drawMoMatrix();
 
   const labels = rows.map(r=>fmtYM2(r.ym));
-  drawLineChart('mo-lines', { labels, min:3.5, max:5, series: DIMS.map(d=>({ label:d.label, color:d.color, data:rows.map(r=>r[d.k]) })) });
+  const lineRange = autoRange(DIMS.map(d=>rows.map(r=>r[d.k])));
+  drawLineChart('mo-lines', { labels, min:lineRange.min, max:lineRange.max, series: DIMS.map(d=>({ label:d.label, color:d.color, data:rows.map(r=>r[d.k]) })) });
   drawBarChart('mo-bars', { labels, values: rows.map(r=>r.count), color:'#22d3ee', isCount:true });
-  drawLineChart('mo-avgline', { labels, min:3.5, max:5, showLegend:false, series:[{label:'均總分', color:'#34d399', data:rows.map(r=>r.g)}] });
+  const avgRange = autoRange([rows.map(r=>r.g)]);
+  drawLineChart('mo-avgline', { labels, min:avgRange.min, max:avgRange.max, showLegend:false, series:[{label:'均總分', color:'#34d399', data:rows.map(r=>r.g)}] });
 }
 
 // ================= TAB 3: PLANT =================
