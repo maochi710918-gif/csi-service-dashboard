@@ -266,11 +266,13 @@ footer.foot{text-align:center; color:var(--muted); font-size:11.5px; padding:30p
   <section class="tab-panel" id="tab-paint"></section>
   <section class="tab-panel" id="tab-warranty"></section>
   <section class="tab-panel" id="tab-insights"></section>
+  <section class="tab-panel" id="tab-official"></section>
 </main>
 
 <footer class="foot">CSI 服務戰情系統 · 資料範圍 <span id="footRange"></span> · 產生時間 <span id="footGen"></span></footer>
 
 <script src="records.js"></script>
+<script src="official.js"></script>
 <script>
 (function(){
 "use strict";
@@ -568,6 +570,7 @@ setInterval(tickClock, 1000); tickClock();
 // ================= TABS =================
 const TABS = [
   {id:'overview', icon:'📊', label:'總覽儀表板', render:renderOverview},
+  {id:'official', icon:'📑', label:'官方成績',   render:renderOfficial},
   {id:'monthly',  icon:'📈', label:'月度趨勢',   render:renderMonthly},
   {id:'plant',    icon:'🏭', label:'廠區分析',   render:renderPlant},
   {id:'advisor',  icon:'👤', label:'服務顧問',   render:renderAdvisor},
@@ -1192,6 +1195,126 @@ function renderInsights(){
       </table></div>
     </div>
   `;
+}
+
+// ================= TAB: OFFICIAL (官方月度成績：1000分制CSI + 再回廠率) =================
+const offCtl = { metric:'csi' };
+function rawRange(lists, step){
+  let mn=Infinity, mx=-Infinity;
+  lists.forEach(a=>a.forEach(v=>{ if(v!=null){ if(v<mn) mn=v; if(v>mx) mx=v; } }));
+  if(!isFinite(mn)) return {min:0,max:100};
+  return {min: Math.floor((mn-step*0.3)/step)*step, max: Math.ceil((mx+step*0.1)/step)*step};
+}
+function offHeat(v, metric){
+  if(v==null) return '';
+  const hi = metric==='csi' ? 975 : 0.97, mid = metric==='csi' ? 950 : 0.93;
+  if(v>=hi) return 'background:rgba(52,211,153,.16);color:var(--green);';
+  if(v>=mid) return 'background:rgba(251,191,36,.16);color:var(--amber);';
+  return 'background:rgba(248,113,113,.2);color:var(--red);';
+}
+function renderOfficial(){
+  const el = document.getElementById('tab-official');
+  const O = window.CSI_OFFICIAL;
+  if(!O){ el.innerHTML = '<div class="card empty">尚無官方成績資料（official.js）</div>'; return; }
+  const months = O.months, n = months.length, li = n-1, pi = n-2;
+  const fmtC = v => v==null ? '—' : v.toFixed(1);
+  const fmtR = v => v==null ? '—' : (v*100).toFixed(1)+'%';
+  const dlt = (a,b,isRev)=>{
+    if(a==null||b==null) return '<span class="flat">—</span>';
+    const d = isRev ? (a-b)*100 : a-b;
+    const t = isRev ? Math.abs(d).toFixed(1)+'pt' : Math.abs(d).toFixed(1);
+    return d>0.0001 ? `<span class="up">▲${t}</span>` : d<-0.0001 ? `<span class="down">▼${t}</span>` : '<span class="flat">持平</span>';
+  };
+  const plants = O.plants.filter(p=> (state.dealer==='all' || p.dealer===state.dealer) && (state.plant==='all' || p.name===state.plant));
+  const es = O.es;
+  const yr = String(months[li]).slice(0,4);
+  const ytdIdx = months.map((m,i)=>m.startsWith(yr)?i:-1).filter(i=>i>=0);
+  const avgOf = (arr, idxs)=>{ const v=idxs.map(i=>arr[i]).filter(x=>x!=null); return v.length? v.reduce((a,b)=>a+b,0)/v.length : null; };
+  const lastLbl = fmtYM(months[li]);
+  const ranked = plants.filter(p=>p.csi[li]!=null).sort((a,b)=>b.csi[li]-a.csi[li]);
+  const best = ranked[0], worst = ranked[ranked.length-1];
+  const drops = plants.filter(p=>p.csi[li]!=null && p.csi[pi]!=null).map(p=>({p, d:p.csi[li]-p.csi[pi]})).sort((a,b)=>a.d-b.d);
+  const csiCls = v => v>=975 ? 'score-good' : v>=950 ? 'score-warn' : 'score-bad';
+
+  el.innerHTML = `
+    <div class="grid grid-4">
+      <div class="card kpi"><div class="ic">📑</div><div class="num">${fmtC(es.csi[li])}</div><div class="lbl">${lastLbl} ES整體 CSI（1000分制）<br>${dlt(es.csi[li], es.csi[pi], false)} vs 上月</div></div>
+      <div class="card kpi"><div class="ic">🔁</div><div class="num">${fmtR(es.rev[li])}</div><div class="lbl">${lastLbl} ES整體 再回廠率<br>${dlt(es.rev[li], es.rev[pi], true)} vs 上月</div></div>
+      <div class="card kpi"><div class="ic">📆</div><div class="num">${fmtC(avgOf(es.csi, ytdIdx))}</div><div class="lbl">${yr} 年累計月均 CSI<br>再回廠率 ${fmtR(avgOf(es.rev, ytdIdx))}</div></div>
+      <div class="card kpi purple"><div class="ic">🏆</div><div class="num" style="font-size:20px;">${best? best.name+' '+fmtC(best.csi[li]) : '—'}</div><div class="lbl">${lastLbl} 最高　最低：${worst? worst.name+' '+fmtC(worst.csi[li]) : '—'}</div></div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h3>🧭 本月重點 <span class="tag">資料：${fmtYM(months[0])}–${lastLbl}・官方月報</span></h3>
+      <p style="font-size:13.5px; line-height:1.9;">
+        ${lastLbl} ES整體 CSI 為 <b class="${csiCls(es.csi[li])}">${fmtC(es.csi[li])}</b>（較上月 ${dlt(es.csi[li], es.csi[pi], false)}），再回廠率 <b>${fmtR(es.rev[li])}</b>。
+        ${best? `各廠中以 <b>${best.name}</b>（${fmtC(best.csi[li])}）最高` : ''}${worst? `，<b>${worst.name}</b>（${fmtC(worst.csi[li])}）最低` : ''}。
+        ${drops.length && drops[0].d<0 ? `較上月退步最多的是 <b class="down">${drops[0].p.name}</b>（${drops[0].d.toFixed(1)}）` : '各廠較上月皆未退步'}${drops.length>1 && drops[drops.length-1].d>0 ? `，進步最多的是 <b class="up">${drops[drops.length-1].p.name}</b>（+${drops[drops.length-1].d.toFixed(1)}）` : ''}。
+        <span style="color:var(--muted)">（官方 CSI 為含 SOP 扣分的 1000 分制，與其他分頁依問卷逐筆算出的 5 分制不同，數字不可直接互比。）</span>
+      </p>
+    </div>
+
+    <div class="grid grid-2" style="margin-top:16px;">
+      <div class="card"><h3>📈 CSI 月度走勢（1000分制）</h3><div class="chart-wrap tall"><div id="off-csi"></div></div></div>
+      <div class="card"><h3>🔁 再回廠率月度走勢（%）</h3><div class="chart-wrap tall"><div id="off-rev"></div></div></div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h3>🏭 各廠 × 月份矩陣</h3>
+      <div class="searchbar" style="margin-bottom:10px;">
+        <select id="offMetric"><option value="csi" ${offCtl.metric==='csi'?'selected':''}>指標：CSI（1000分制）</option><option value="rev" ${offCtl.metric==='rev'?'selected':''}>指標：再回廠率</option></select>
+      </div>
+      <div id="offMatrix"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h3>📋 ${lastLbl} 各廠排名 <span class="tag">依 CSI 由高到低</span></h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>排名</th><th>廠區</th><th>體系</th><th>區域</th><th>CSI</th><th>較上月</th><th>再回廠率</th><th>較上月</th></tr></thead>
+        <tbody>${ranked.map((p,i)=>`<tr><td>${medal(i)||('#'+(i+1))}</td><td class="name">${p.name}</td><td>${p.dealer}</td><td>${p.region||''}</td>
+          <td style="${offHeat(p.csi[li],'csi')}font-weight:700;">${fmtC(p.csi[li])}</td><td>${dlt(p.csi[li],p.csi[pi],false)}</td>
+          <td style="${offHeat(p.rev[li],'rev')}font-weight:700;">${fmtR(p.rev[li])}</td><td>${dlt(p.rev[li],p.rev[pi],true)}</td></tr>`).join('') || '<tr><td colspan="8" class="empty">無資料</td></tr>'}</tbody>
+      </table></div>
+    </div>`;
+
+  const labels = months.map(fmtYM2);
+  const sel = state.plant!=='all' ? plants : [];
+  const mk = (key, scale)=>{
+    const sc = a=>a.map(v=>v==null?null:v*scale);
+    return [
+      {label:'ES整體', color:'#2dd4bf', data:sc(es[key])},
+      {label:'新北區', color:'#fbbf24', data:sc(O.regions['新北區'][key])},
+      {label:'台北區', color:'#a78bfa', data:sc(O.regions['台北區'][key])},
+      ...sel.map(p=>({label:p.name, color:'#f87171', data:sc(p[key])})),
+    ];
+  };
+  const sCsi = mk('csi',1), sRev = mk('rev',100);
+  const r1 = rawRange(sCsi.map(s=>s.data), 10), r2 = rawRange(sRev.map(s=>s.data), 2);
+  drawLineChart('off-csi', {labels, min:r1.min, max:r1.max, isCount:true, series:sCsi});
+  drawLineChart('off-rev', {labels, min:r2.min, max:r2.max, isCount:true, series:sRev});
+
+  const drawMatrix = ()=>{
+    const metric = offCtl.metric;
+    const fmt = v => v==null ? '<span style="color:var(--muted)">—</span>' : (metric==='csi' ? v.toFixed(1) : (v*100).toFixed(1)+'%');
+    const row = (name, arr, strong, sub)=>`<tr${strong?' style="background:rgba(45,212,191,.07);font-weight:800;"':''}>
+      <td class="name" style="position:sticky;left:0;background:var(--card);z-index:1;">${name}${sub?`<span style="color:var(--muted);font-weight:400;font-size:10.5px;"> ${sub}</span>`:''}</td>
+      ${arr.map((v,i)=>`<td style="${offHeat(v,metric)}" title="${name} ${fmtYM(months[i])}">${fmt(v)}</td>`).join('')}</tr>`;
+    let body = '';
+    const showAgg = state.dealer==='all' && state.plant==='all';
+    if(showAgg) body += row('ES整體', es[metric], true);
+    ['新北區','台北區'].forEach(rg=>{
+      const ps = plants.filter(p=>p.region===rg);
+      if(!ps.length) return;
+      if(showAgg) body += row(rg, O.regions[rg][metric], true);
+      ps.forEach(p=> body += row(p.name, p[metric], false, p.dealer));
+    });
+    document.getElementById('offMatrix').innerHTML = `<div class="tablewrap" style="max-height:600px;overflow:auto;"><table>
+      <thead><tr><th style="left:0;z-index:2;">廠區</th>${months.map(m=>`<th>${fmtYM2(m)}</th>`).join('')}</tr></thead>
+      <tbody>${body}</tbody></table></div>
+      <div class="threshold-note" style="margin-top:8px;">顏色：${metric==='csi'?'≥975 綠、950–975 黃、<950 紅':'≥97% 綠、93–97% 黃、<93% 紅'}（顯示用門檻，非官方目標）；「—」表示該月無成績。</div>`;
+  };
+  document.getElementById('offMetric').addEventListener('change', e=>{ offCtl.metric = e.target.value; drawMatrix(); });
+  drawMatrix();
 }
 
 // ================= INIT =================
