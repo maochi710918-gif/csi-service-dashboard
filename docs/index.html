@@ -4,30 +4,59 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CSI 服務戰情系統｜裕信汽車服務部</title>
+<script>(function(){var t=null;try{t=localStorage.getItem('csi-theme')}catch(e){}
+if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark'}
+document.documentElement.setAttribute('data-theme',t)})();</script>
 <style>
-:root{
-  --bg0:#0a1128;
-  --bg1:#0d1b3e;
-  --card:#131c3a;
-  --card2:#0f1730;
-  --border:rgba(255,255,255,.08);
-  --ink:#e8ecf7;
-  --ink2:#98a2c0;
-  --muted:#66708f;
-  --teal:#2dd4bf;
-  --cyan:#22d3ee;
-  --green:#34d399;
-  --amber:#fbbf24;
-  --purple:#a78bfa;
-  --red:#f87171;
-  --pink:#fb7185;
-  --blue:#60a5fa;
+:root, :root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg0:#0a1020; --bg1:#0e1733;
+  --glow1:#12275c; --glow2:#102250;
+  --card:#131c37; --card2:#0e1630;
+  --border:rgba(255,255,255,.09);
+  --ink:#eaeefa; --ink2:#aab3d1; --muted:#8b95b8;
+  --axis:#8b95b8; --grid:rgba(255,255,255,.07);
+  --ov:rgba(255,255,255,.06); --hover:rgba(255,255,255,.035); --track:rgba(255,255,255,.07);
+  --teal:#2dd4bf; --cyan:#3cc8f0; --on-accent:#04231f;
+  --glow:rgba(45,212,191,.30); --strong-bg:rgba(45,212,191,.08);
+  --good:#34d399; --warn:#fbbf24; --bad:#ff7b7b;
+  --good-bg:rgba(52,211,153,.14); --warn-bg:rgba(251,191,36,.14); --bad-bg:rgba(255,123,123,.16);
+  --good-bd:rgba(52,211,153,.38);
+  --purple:#c58af0;
+  --c1:#2dd4bf; --c2:#5b9cf5; --c3:#f2b33d; --c4:#c58af0; --c5:#f472a8; --c6:#fb923c; --c7:#94a0c4;
+  --s1:#f87171; --s2:#fb923c; --s3:#fbbf24; --s4:#a3e635; --s5:#34d399;
+  --hdr-bg:rgba(10,16,32,.92); --fb-bg:rgba(8,13,28,.85); --nav-bg:rgba(6,10,24,.72);
+  --logo-bg:radial-gradient(circle at 35% 30%, #1d2d5c, #0b1330);
+  --kpi-hi:linear-gradient(180deg,#261c48,#161030); --kpi-hi-bd:rgba(197,138,240,.38);
+  --shadow:0 6px 20px rgba(0,0,0,.28); --scroll:#2a3a73;
+}
+:root[data-theme="light"]{
+  color-scheme: light;
+  --bg0:#f3f6fb; --bg1:#e8eef8;
+  --glow1:#dce8ff; --glow2:#e3ecff;
+  --card:#ffffff; --card2:#f5f8fd;
+  --border:rgba(20,35,80,.12);
+  --ink:#121c38; --ink2:#46527a; --muted:#64708f;
+  --axis:#64708f; --grid:rgba(20,35,80,.10);
+  --ov:rgba(20,35,80,.06); --hover:rgba(20,35,80,.04); --track:rgba(20,35,80,.09);
+  --teal:#0e8a7d; --cyan:#0b7fc0; --on-accent:#ffffff;
+  --glow:rgba(14,138,125,.22); --strong-bg:rgba(14,138,125,.09);
+  --good:#0a7f5a; --warn:#a16207; --bad:#c62828;
+  --good-bg:rgba(5,150,105,.12); --warn-bg:rgba(202,138,4,.15); --bad-bg:rgba(220,38,38,.10);
+  --good-bd:rgba(5,150,105,.35);
+  --purple:#6d28d9;
+  --c1:#0e8a7d; --c2:#2563eb; --c3:#c2860a; --c4:#9333ea; --c5:#db2777; --c6:#ea580c; --c7:#64748b;
+  --s1:#dc2626; --s2:#ea580c; --s3:#ca8a04; --s4:#65a30d; --s5:#059669;
+  --hdr-bg:rgba(255,255,255,.90); --fb-bg:rgba(244,247,253,.94); --nav-bg:rgba(236,241,250,.92);
+  --logo-bg:radial-gradient(circle at 35% 30%, #ffffff, #d9e6fb);
+  --kpi-hi:linear-gradient(180deg,#f3ecff,#e7dcff); --kpi-hi-bd:rgba(124,58,237,.30);
+  --shadow:0 4px 16px rgba(30,50,100,.09); --scroll:#b8c3dc;
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{
-  background:radial-gradient(1200px 600px at 10% -10%, #10214f 0%, transparent 60%),
-             radial-gradient(1000px 500px at 100% 0%, #0f1f46 0%, transparent 55%),
+  background:radial-gradient(1200px 600px at 10% -10%, var(--glow1) 0%, transparent 60%),
+             radial-gradient(1000px 500px at 100% 0%, var(--glow2) 0%, transparent 55%),
              linear-gradient(180deg,var(--bg0),var(--bg1) 60%,var(--bg0));
   color:var(--ink);
   font-family:"Microsoft JhengHei","PingFang TC","Segoe UI",system-ui,-apple-system,sans-serif;
@@ -36,13 +65,13 @@ body{
   min-height:100vh;
 }
 ::-webkit-scrollbar{height:8px;width:8px;}
-::-webkit-scrollbar-thumb{background:#26346a;border-radius:4px;}
+::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:4px;}
 a{color:var(--cyan);}
 
 /* ---------- header ---------- */
 .header{
   position:sticky; top:0; z-index:50;
-  background:rgba(10,17,40,.92);
+  background:var(--hdr-bg);
   backdrop-filter:blur(6px);
   border-bottom:1px solid var(--border);
   padding:10px 20px;
@@ -51,10 +80,10 @@ a{color:var(--cyan);}
 .brand{display:flex;align-items:center;gap:10px;min-width:220px;}
 .brand .logo{
   width:40px;height:40px;border-radius:50%;
-  background:radial-gradient(circle at 35% 30%, #1c2b57, #0b1330);
+  background:var(--logo-bg);
   display:flex;align-items:center;justify-content:center;font-size:20px;
   border:1px solid var(--border);
-  box-shadow:0 0 18px rgba(45,212,191,.25) inset;
+  box-shadow:0 0 18px var(--glow) inset;
 }
 .brand .name{font-size:17px;font-weight:800;letter-spacing:.5px;}
 .brand .sub{font-size:10px;color:var(--muted);letter-spacing:1.5px;margin-top:1px;}
@@ -69,23 +98,25 @@ a{color:var(--cyan);}
 .clock b{display:block;font-size:14px;color:var(--ink);font-variant-numeric:tabular-nums;}
 .live{
   display:inline-flex;align-items:center;gap:5px;
-  background:rgba(52,211,153,.12); color:var(--green);
-  border:1px solid rgba(52,211,153,.35);
+  background:var(--good-bg); color:var(--good);
+  border:1px solid var(--good-bd);
   padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;letter-spacing:.5px;
 }
-.live .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 1.4s infinite;}
+.live .dot{width:6px;height:6px;border-radius:50%;background:var(--good);box-shadow:0 0 8px var(--good);animation:pulse 1.4s infinite;}
 @keyframes pulse{0%{opacity:1;}50%{opacity:.25;}100%{opacity:1;}}
 
+.theme-btn{background:var(--card2);border:1px solid var(--border);color:var(--ink);border-radius:8px;padding:5px 11px;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap;}
+.theme-btn:hover{border-color:var(--teal);color:var(--teal);}
 .dealer-seg{display:flex;background:var(--card2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
 .dealer-seg button{
   background:transparent;border:none;color:var(--ink2);padding:6px 12px;font-size:12px;cursor:pointer;font-weight:600;
 }
-.dealer-seg button.active{background:var(--teal);color:#04241f;}
+.dealer-seg button.active{background:var(--teal);color:var(--on-accent);}
 
 /* ---------- filter bar ---------- */
 .filterbar{
   display:flex; align-items:center; gap:14px; flex-wrap:wrap;
-  padding:8px 20px; background:rgba(8,14,34,.85); border-bottom:1px solid var(--border);
+  padding:8px 20px; background:var(--fb-bg); border-bottom:1px solid var(--border);
   font-size:12.5px; color:var(--ink2);
 }
 .fb-label{font-weight:700; color:var(--ink);}
@@ -104,7 +135,7 @@ a{color:var(--cyan);}
 /* ---------- nav tabs ---------- */
 .navtabs{
   display:flex; gap:4px; overflow-x:auto; padding:8px 16px;
-  background:rgba(6,11,28,.7); border-bottom:1px solid var(--border);
+  background:var(--nav-bg); border-bottom:1px solid var(--border);
   position:sticky; top:62px; z-index:40;
 }
 .navtabs::-webkit-scrollbar{height:0;}
@@ -113,8 +144,8 @@ a{color:var(--cyan);}
   color:var(--ink2); font-size:13px; font-weight:700; border:1px solid transparent;
 }
 .navtab.active{
-  color:var(--bg0); background:linear-gradient(135deg,var(--teal),var(--cyan));
-  box-shadow:0 0 16px rgba(45,212,191,.35);
+  color:var(--on-accent); background:linear-gradient(135deg,var(--teal),var(--cyan));
+  box-shadow:0 0 16px var(--glow);
 }
 .navtab:not(.active):hover{background:var(--card2); color:var(--ink);}
 
@@ -133,21 +164,21 @@ main{padding:18px 20px 60px; max-width:1500px; margin:0 auto;}
 .card{
   background:linear-gradient(180deg, var(--card), var(--card2));
   border:1px solid var(--border); border-radius:14px; padding:16px 18px;
-  box-shadow:0 6px 20px rgba(0,0,0,.25);
+  box-shadow:var(--shadow);
 }
 .card h3{margin:0 0 10px; font-size:14px; color:var(--ink); display:flex; align-items:center; gap:8px;}
-.card h3 .tag{margin-left:auto; font-size:10.5px; color:var(--muted); font-weight:400; background:rgba(255,255,255,.05); padding:3px 8px; border-radius:20px;}
+.card h3 .tag{margin-left:auto; font-size:10.5px; color:var(--muted); font-weight:400; background:var(--ov); padding:3px 8px; border-radius:20px;}
 
 .kpi{text-align:center; padding:18px 10px;}
 .kpi .ic{font-size:22px;}
 .kpi .num{font-size:26px; font-weight:800; margin-top:4px; color:var(--teal); font-variant-numeric:tabular-nums;}
 .kpi .lbl{font-size:11.5px; color:var(--ink2); margin-top:2px;}
-.kpi.purple{background:linear-gradient(180deg,#241a44,#160f2c); border-color:rgba(167,139,250,.35);}
+.kpi.purple{background:var(--kpi-hi); border-color:var(--kpi-hi-bd);}
 .kpi.purple .num{color:var(--purple);}
 
 .barrow{display:flex; align-items:center; gap:10px; margin:12px 0;}
 .barrow .lbl{width:118px; font-size:12.5px; color:var(--ink2); flex-shrink:0;}
-.barrow .track{flex:1; height:16px; background:rgba(255,255,255,.06); border-radius:8px; overflow:hidden; position:relative;}
+.barrow .track{flex:1; height:16px; background:var(--ov); border-radius:8px; overflow:hidden; position:relative;}
 .barrow .fill{height:100%; border-radius:8px; background:linear-gradient(90deg,var(--teal),var(--cyan));}
 .barrow .val{width:56px; text-align:right; font-weight:700; font-variant-numeric:tabular-nums; font-size:12.5px;}
 
@@ -155,19 +186,19 @@ table{width:100%; border-collapse:collapse; font-size:12.5px;}
 th,td{padding:8px 10px; text-align:center; border-bottom:1px solid var(--border); white-space:nowrap;}
 th{color:var(--ink2); font-weight:700; position:sticky; top:0; background:var(--card); cursor:pointer; user-select:none;}
 th.sortable:hover{color:var(--teal);}
-tbody tr:hover{background:rgba(255,255,255,.03);}
+tbody tr:hover{background:var(--hover);}
 .tablewrap{overflow-x:auto;}
 td.name{text-align:left;}
 .medal{font-size:15px;}
-.rank-badge{display:inline-block;width:22px;height:22px;line-height:22px;border-radius:50%;background:rgba(255,255,255,.06);font-size:11px;font-weight:800;}
+.rank-badge{display:inline-block;width:22px;height:22px;line-height:22px;border-radius:50%;background:var(--ov);font-size:11px;font-weight:800;}
 
-.score-good{color:var(--green); font-weight:700;}
-.score-warn{color:var(--amber); font-weight:700;}
-.score-bad{color:var(--red); font-weight:700;}
+.score-good{color:var(--good); font-weight:700;}
+.score-warn{color:var(--warn); font-weight:700;}
+.score-bad{color:var(--bad); font-weight:700;}
 .pill{display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:700;}
-.pill.good{background:rgba(52,211,153,.15); color:var(--green);}
-.pill.warn{background:rgba(251,191,36,.15); color:var(--amber);}
-.pill.bad{background:rgba(248,113,113,.15); color:var(--red);}
+.pill.good{background:var(--good-bg); color:var(--good);}
+.pill.warn{background:var(--warn-bg); color:var(--warn);}
+.pill.bad{background:var(--bad-bg); color:var(--bad);}
 
 .chart-wrap{position:relative; height:280px;}
 .chart-wrap.tall{height:340px;}
@@ -180,15 +211,15 @@ td.name{text-align:left;}
 }
 .searchbar select{background:var(--card2); border:1px solid var(--border); color:var(--ink); padding:10px 12px; border-radius:10px; font-size:13px;}
 .searchbar button{
-  background:linear-gradient(135deg,var(--teal),var(--cyan)); border:none; color:#04241f; font-weight:800;
+  background:linear-gradient(135deg,var(--teal),var(--cyan)); border:none; color:var(--on-accent); font-weight:800;
   padding:10px 22px; border-radius:10px; cursor:pointer; font-size:13px;
 }
 .searchbar button:hover{filter:brightness(1.08);}
 
 .plate-badge{font-size:22px; font-weight:800; background:var(--card2); border:1px solid var(--border); padding:8px 18px; border-radius:10px; letter-spacing:1px;}
-.warn-tag{background:rgba(248,113,113,.15); color:var(--red); padding:4px 10px; border-radius:20px; font-size:11.5px; font-weight:700;}
-.up{color:var(--green); font-weight:700;}
-.down{color:var(--red); font-weight:700;}
+.warn-tag{background:var(--bad-bg); color:var(--bad); padding:4px 10px; border-radius:20px; font-size:11.5px; font-weight:700;}
+.up{color:var(--good); font-weight:700;}
+.down{color:var(--bad); font-weight:700;}
 .flat{color:var(--muted);}
 
 .empty{text-align:center; color:var(--muted); padding:40px 0;}
@@ -206,7 +237,7 @@ td.name{text-align:left;}
 .plant-card .pc-name{font-weight:800; font-size:13.5px;}
 .plant-card .pc-score{font-size:24px; font-weight:800; color:var(--teal); margin:6px 0 2px;}
 .plant-card .pc-meta{font-size:11px; color:var(--ink2);}
-.plant-card .track{margin-top:8px; height:8px; border-radius:6px; background:rgba(255,255,255,.06); overflow:hidden;}
+.plant-card .track{margin-top:8px; height:8px; border-radius:6px; background:var(--ov); overflow:hidden;}
 .plant-card .track .fill{height:100%; background:linear-gradient(90deg,var(--teal),var(--cyan));}
 
 .threshold-note{font-size:11px; color:var(--muted); margin-bottom:8px;}
@@ -230,6 +261,7 @@ footer.foot{text-align:center; color:var(--muted); font-size:11.5px; padding:30p
       <button data-d="裕信">裕信</button>
       <button data-d="裕信-2">裕信-2</button>
     </div>
+    <button class="theme-btn" id="themeBtn" title="切換淺色／深色模式"></button>
     <div class="clock">
       <b id="clockTime">--:--:--</b>
       <span id="clockDate">----/--/-- (-)</span>
@@ -277,12 +309,18 @@ footer.foot{text-align:center; color:var(--muted); font-size:11.5px; padding:30p
 (function(){
 "use strict";
 
+const PAL = {};
+function loadPalette(){
+  const cs = getComputedStyle(document.documentElement);
+  ['c1','c2','c3','c4','c5','c6','c7','s1','s2','s3','s4','s5','good','warn','bad'].forEach(k=>{ PAL[k] = cs.getPropertyValue('--'+k).trim(); });
+}
+loadPalette();
 const DIMS = [
-  {k:'o', label:'整體滿意度', icon:'⭐', color:'#2dd4bf'},
-  {k:'r', label:'保修處理',   icon:'🔧', color:'#34d399'},
-  {k:'k', label:'結帳服務',   icon:'💳', color:'#fbbf24'},
-  {k:'x', label:'交修說明',   icon:'🗣️', color:'#a78bfa'},
-  {k:'l', label:'客休室',     icon:'🛋️', color:'#60a5fa'},
+  {k:'o', label:'整體滿意度', icon:'⭐', get color(){return PAL.c1}},
+  {k:'r', label:'保修處理',   icon:'🔧', get color(){return PAL.c2}},
+  {k:'k', label:'結帳服務',   icon:'💳', get color(){return PAL.c3}},
+  {k:'x', label:'交修說明',   icon:'🗣️', get color(){return PAL.c4}},
+  {k:'l', label:'客休室',     icon:'🛋️', get color(){return PAL.c5}},
 ];
 const RAW = (window.CSI_DATA && window.CSI_DATA.records) || [];
 const META = (window.CSI_DATA && window.CSI_DATA.meta) || {};
@@ -367,12 +405,12 @@ function drawLineChart(id, {labels, series, min, max, isCount=false, showLegend=
   let grid='';
   ticks.forEach(t=>{
     const yy=y(t);
-    grid += `<line x1="${padL}" y1="${yy}" x2="${w-padR}" y2="${yy}" stroke="rgba(255,255,255,.07)" stroke-width="1"/>`;
-    grid += `<text x="${padL-8}" y="${yy+3}" text-anchor="end" font-size="10" fill="#66708f">${axisValLabel(t,isCount)}</text>`;
+    grid += `<line x1="${padL}" y1="${yy}" x2="${w-padR}" y2="${yy}" style="stroke:var(--grid)" stroke-width="1"/>`;
+    grid += `<text x="${padL-8}" y="${yy+3}" text-anchor="end" font-size="10" style="fill:var(--axis)">${axisValLabel(t,isCount)}</text>`;
   });
   const step = Math.max(1, Math.ceil(n/8));
   let xlabels='';
-  labels.forEach((lb,i)=>{ if(i%step===0 || i===n-1) xlabels += `<text x="${x(i)}" y="${h-6}" text-anchor="middle" font-size="10" fill="#66708f">${esc(lb)}</text>`; });
+  labels.forEach((lb,i)=>{ if(i%step===0 || i===n-1) xlabels += `<text x="${x(i)}" y="${h-6}" text-anchor="middle" font-size="10" style="fill:var(--axis)">${esc(lb)}</text>`; });
   let paths='';
   series.forEach(s=>{
     let d=''; let pts='';
@@ -401,8 +439,8 @@ function drawBarChart(id, {labels, values, color, isCount=true}){
   let grid='';
   ticks.forEach(t=>{
     const yy=y(t);
-    grid += `<line x1="${padL}" y1="${yy}" x2="${w-padR}" y2="${yy}" stroke="rgba(255,255,255,.07)" stroke-width="1"/>`;
-    grid += `<text x="${padL-8}" y="${yy+3}" text-anchor="end" font-size="10" fill="#66708f">${axisValLabel(t,isCount)}</text>`;
+    grid += `<line x1="${padL}" y1="${yy}" x2="${w-padR}" y2="${yy}" style="stroke:var(--grid)" stroke-width="1"/>`;
+    grid += `<text x="${padL-8}" y="${yy+3}" text-anchor="end" font-size="10" style="fill:var(--axis)">${axisValLabel(t,isCount)}</text>`;
   });
   const step = Math.max(1, Math.ceil(n/8));
   let bars='', xlabels='';
@@ -410,7 +448,7 @@ function drawBarChart(id, {labels, values, color, isCount=true}){
     const bx = padL + i*(plotW/n) + gap/2;
     const by = y(v);
     bars += `<rect x="${bx}" y="${by}" width="${bw}" height="${padT+plotH-by}" rx="3" fill="${color}"/>`;
-    if(i%step===0 || i===n-1) xlabels += `<text x="${bx+bw/2}" y="${h-6}" text-anchor="middle" font-size="10" fill="#66708f">${esc(labels[i])}</text>`;
+    if(i%step===0 || i===n-1) xlabels += `<text x="${bx+bw/2}" y="${h-6}" text-anchor="middle" font-size="10" style="fill:var(--axis)">${esc(labels[i])}</text>`;
   });
   host.innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" xmlns="${SVGNS}">${grid}${bars}${xlabels}</svg>`;
 }
@@ -429,8 +467,8 @@ function drawGroupedBarChart(id, {labels, series, min, max}){
   let grid='';
   ticks.forEach(t=>{
     const yy=y(t);
-    grid += `<line x1="${padL}" y1="${yy}" x2="${w-padR}" y2="${yy}" stroke="rgba(255,255,255,.07)" stroke-width="1"/>`;
-    grid += `<text x="${padL-8}" y="${yy+3}" text-anchor="end" font-size="10" fill="#66708f">${axisValLabel(t,false)}</text>`;
+    grid += `<line x1="${padL}" y1="${yy}" x2="${w-padR}" y2="${yy}" style="stroke:var(--grid)" stroke-width="1"/>`;
+    grid += `<text x="${padL-8}" y="${yy+3}" text-anchor="end" font-size="10" style="fill:var(--axis)">${axisValLabel(t,false)}</text>`;
   });
   let bars='', xlabels='';
   labels.forEach((lb,gi)=>{
@@ -443,7 +481,7 @@ function drawGroupedBarChart(id, {labels, series, min, max}){
       bars += `<rect x="${bx}" y="${by}" width="${barW*0.85}" height="${padT+plotH-by}" rx="2" fill="${s.color}"/>`;
     });
     const cx = padL + gi*groupW + groupW/2;
-    xlabels += `<text x="${cx}" y="${h-padB+16}" text-anchor="end" font-size="10" fill="#66708f" transform="rotate(-40 ${cx} ${h-padB+16})">${esc(lb)}</text>`;
+    xlabels += `<text x="${cx}" y="${h-padB+16}" text-anchor="end" font-size="10" style="fill:var(--axis)" transform="rotate(-40 ${cx} ${h-padB+16})">${esc(lb)}</text>`;
   });
   host.innerHTML = legend + `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" xmlns="${SVGNS}">${grid}${bars}${xlabels}</svg>`;
 }
@@ -463,11 +501,11 @@ function drawHBarChart(id, {labels, values, color, min=0, max, isCount=false}){
   values.forEach((v,i)=>{
     const yy = padT + i*rowH;
     const bx = x(Math.max(min,v));
-    const c = Array.isArray(color) ? (color[i]||'#2dd4bf') : color;
+    const c = Array.isArray(color) ? (color[i]||PAL.c1) : color;
     const label = (typeof v==='number')? (isCount? Math.round(v).toLocaleString() : v.toFixed(3)) : v;
-    bars += `<text x="${padL-8}" y="${yy+rowH*0.62}" text-anchor="end" font-size="11" fill="#c7ccd4">${esc(labels[i])}</text>`;
+    bars += `<text x="${padL-8}" y="${yy+rowH*0.62}" text-anchor="end" font-size="11" style="fill:var(--ink2)">${esc(labels[i])}</text>`;
     bars += `<rect x="${padL}" y="${yy+4}" width="${Math.max(2,bx-padL)}" height="${rowH-9}" rx="3" fill="${c}"/>`;
-    bars += `<text x="${bx+6}" y="${yy+rowH*0.62}" font-size="11" fill="#e8ecf7" font-weight="700">${label}</text>`;
+    bars += `<text x="${bx+6}" y="${yy+rowH*0.62}" font-size="11" style="fill:var(--ink)" font-weight="700">${label}</text>`;
   });
   host.innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" xmlns="${SVGNS}">${bars}</svg>`;
 }
@@ -490,7 +528,7 @@ function drawDonut(id, segments){
     <div style="display:flex;align-items:center;gap:22px;height:100%;">
       <div style="position:relative;width:150px;height:150px;flex-shrink:0;">
         <div style="width:100%;height:100%;border-radius:50%;background:conic-gradient(${stops});"></div>
-        <div style="position:absolute;inset:24px;border-radius:50%;background:#131c3a;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+        <div style="position:absolute;inset:24px;border-radius:50%;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
           <b style="font-size:18px;">${total.toLocaleString()}</b><span style="font-size:9.5px;color:var(--muted);">總筆數</span>
         </div>
       </div>
@@ -675,11 +713,11 @@ function renderOverview(){
   const c3 = ds.filter(r=>r.g!=null && r.g>=4.5 && r.g<4.999).length;
   const c4 = ds.filter(r=>r.g!=null && r.g>=4.999).length;
   drawDonut('ov-donut', [
-    {label:'3以下', count:c0, color:'#f87171'},
-    {label:'3-4',   count:c1, color:'#fb923c'},
-    {label:'4-4.5', count:c2, color:'#fbbf24'},
-    {label:'4.5-5', count:c3, color:'#a3e635'},
-    {label:'5分',   count:c4, color:'#34d399'},
+    {label:'3以下', count:c0, color:PAL.s1},
+    {label:'3-4',   count:c1, color:PAL.s2},
+    {label:'4-4.5', count:c2, color:PAL.s3},
+    {label:'4.5-5', count:c3, color:PAL.s4},
+    {label:'5分',   count:c4, color:PAL.s5},
   ]);
 }
 
@@ -701,9 +739,9 @@ function autoRange(valueLists, pad=0.02){
 function heatStyle(v, metric){
   if(v==null) return '';
   if(metric==='count') return '';
-  if(v>=4.95) return 'background:rgba(52,211,153,.16);color:var(--green);';
-  if(v>=4.85) return 'background:rgba(251,191,36,.16);color:var(--amber);';
-  return 'background:rgba(248,113,113,.2);color:var(--red);';
+  if(v>=4.95) return 'background:var(--good-bg);color:var(--good);';
+  if(v>=4.85) return 'background:var(--warn-bg);color:var(--warn);';
+  return 'background:var(--bad-bg);color:var(--bad);';
 }
 function drawMoMatrix(){
   const host = document.getElementById('moMatrix'); if(!host) return;
@@ -728,7 +766,7 @@ function drawMoMatrix(){
       return `<td style="${heatStyle(v,metric)}${small?'opacity:.55;':''}" title="${name} ${fmtYM(m)}：${isCount? v+' 筆' : v.toFixed(3)+'（'+a.length+' 筆）'}">${fmtV(v)}</td>`;
     }).join('');
     const total = val(arr);
-    return `<tr${strong?' style="background:rgba(45,212,191,.07);font-weight:800;"':''}><td class="name" style="position:sticky;left:0;background:var(--card);z-index:1;">${name}</td>${cells}<td style="${heatStyle(total,metric)}font-weight:800;">${fmtV(total)}</td></tr>`;
+    return `<tr${strong?' style="background:var(--strong-bg);font-weight:800;"':''}><td class="name" style="position:sticky;left:0;background:var(--card);z-index:1;">${name}</td>${cells}<td style="${heatStyle(total,metric)}font-weight:800;">${fmtV(total)}</td></tr>`;
   };
   host.innerHTML = `<div class="tablewrap" style="max-height:560px;overflow:auto;"><table>
     <thead><tr><th style="left:0;z-index:2;">廠區</th>${months.map(m=>`<th>${fmtYM2(m)}</th>`).join('')}<th>合計</th></tr></thead>
@@ -779,9 +817,9 @@ function renderMonthly(){
   const labels = rows.map(r=>fmtYM2(r.ym));
   const lineRange = autoRange(DIMS.map(d=>rows.map(r=>r[d.k])));
   drawLineChart('mo-lines', { labels, min:lineRange.min, max:lineRange.max, series: DIMS.map(d=>({ label:d.label, color:d.color, data:rows.map(r=>r[d.k]) })) });
-  drawBarChart('mo-bars', { labels, values: rows.map(r=>r.count), color:'#22d3ee', isCount:true });
+  drawBarChart('mo-bars', { labels, values: rows.map(r=>r.count), color:PAL.c2, isCount:true });
   const avgRange = autoRange([rows.map(r=>r.g)]);
-  drawLineChart('mo-avgline', { labels, min:avgRange.min, max:avgRange.max, showLegend:false, series:[{label:'均總分', color:'#34d399', data:rows.map(r=>r.g)}] });
+  drawLineChart('mo-avgline', { labels, min:avgRange.min, max:avgRange.max, showLegend:false, series:[{label:'均總分', color:PAL.c1, data:rows.map(r=>r.g)}] });
 }
 
 // ================= TAB 3: PLANT =================
@@ -848,7 +886,7 @@ function renderPersonList(field, threshold, tabId, labelName){
       <div><div id="${tabId}-bar"></div></div>
     </div>
   `;
-  drawHBarChart(tabId+'-bar', { labels: top20.map(r=>r.name), values: top20.map(r=>r.g), color:'#2dd4bf', min:3.5, max:5 });
+  drawHBarChart(tabId+'-bar', { labels: top20.map(r=>r.name), values: top20.map(r=>r.g), color:PAL.c1, min:3.5, max:5 });
 }
 
 // ================= TAB 6: PLATE LOOKUP =================
@@ -970,10 +1008,10 @@ function renderVoc(){
     </div>
   `;
 
-  const catColors = {'維修品質/技術':'#f87171','服務態度/人員':'#fbbf24','客休室/等候環境':'#60a5fa','費用/結帳':'#a78bfa',
-    '車載系統/導航':'#22d3ee','等待時間/準時':'#fb7185','溝通/說明':'#34d399','設施/環境硬體':'#fb923c','其他建議':'#98a2c0'};
+  const catColors = {'維修品質/技術':PAL.bad,'服務態度/人員':PAL.c3,'客休室/等候環境':PAL.c2,'費用/結帳':PAL.c4,
+    '車載系統/導航':PAL.c1,'等待時間/準時':PAL.c5,'溝通/說明':PAL.good,'設施/環境硬體':PAL.c6,'其他建議':PAL.c7};
   drawHBarChart('voc-bars', { labels: cats.map(c=>c.cat), values: cats.map(c=>c.count),
-    color: cats.map(c=>catColors[c.cat]||'#2dd4bf'), min:0, isCount:true });
+    color: cats.map(c=>catColors[c.cat]||PAL.c1), min:0, isCount:true });
 
   vocPage = 1;
   vocFilters = {plant:'all', cat:'all', month:'all', kw:''};
@@ -1004,7 +1042,7 @@ function drawVocTable(vocAll){
       <thead><tr><th>月份</th><th>車牌</th><th>廠區</th><th>服務顧問</th><th>分類</th><th>客戶回饋內容</th></tr></thead>
       <tbody>${pageRows.map(r=>`<tr>
         <td>${fmtYM(r.y)}</td><td>${r.p}</td><td class="name">${r.f}</td><td class="name">${r.a||'—'}</td>
-        <td><span class="voc-tag" style="background:rgba(255,255,255,.08)">${r.vc}</span></td>
+        <td><span class="voc-tag" style="background:var(--ov)">${r.vc}</span></td>
         <td class="voc-text-cell">${r.v}</td>
       </tr>`).join('') || `<tr><td colspan="6" class="empty">查無符合條件的回饋</td></tr>`}</tbody>
     </table></div>
@@ -1058,9 +1096,9 @@ function renderCategoryTab(category, tabId){
   `;
 
   const labels = monthRows.map(r=>fmtYM2(r.ym));
-  drawLineChart(tabId+'-trend', { labels, min:3.5, max:5, showLegend:false, series:[{label:'均總分', color:'#2dd4bf', data:monthRows.map(r=>r.g)}] });
+  drawLineChart(tabId+'-trend', { labels, min:3.5, max:5, showLegend:false, series:[{label:'均總分', color:PAL.c1, data:monthRows.map(r=>r.g)}] });
 
-  const palette = ['#2dd4bf','#fbbf24','#a78bfa','#60a5fa','#f87171'];
+  const palette = [PAL.c1,PAL.c3,PAL.c4,PAL.c2,PAL.c5];
   const byPlantMonth = top5Plants.map((plant,idx)=>{
     const arr = ds.filter(r=>r.f===plant);
     const m = groupBy(arr, r=>r.y);
@@ -1208,9 +1246,9 @@ function rawRange(lists, step){
 function offHeat(v, metric){
   if(v==null) return '';
   const hi = metric==='csi' ? 975 : 0.97, mid = metric==='csi' ? 950 : 0.93;
-  if(v>=hi) return 'background:rgba(52,211,153,.16);color:var(--green);';
-  if(v>=mid) return 'background:rgba(251,191,36,.16);color:var(--amber);';
-  return 'background:rgba(248,113,113,.2);color:var(--red);';
+  if(v>=hi) return 'background:var(--good-bg);color:var(--good);';
+  if(v>=mid) return 'background:var(--warn-bg);color:var(--warn);';
+  return 'background:var(--bad-bg);color:var(--bad);';
 }
 function renderOfficial(){
   const el = document.getElementById('tab-official');
@@ -1282,10 +1320,10 @@ function renderOfficial(){
   const mk = (key, scale)=>{
     const sc = a=>a.map(v=>v==null?null:v*scale);
     return [
-      {label:'ES整體', color:'#2dd4bf', data:sc(es[key])},
-      {label:'新北區', color:'#fbbf24', data:sc(O.regions['新北區'][key])},
-      {label:'台北區', color:'#a78bfa', data:sc(O.regions['台北區'][key])},
-      ...sel.map(p=>({label:p.name, color:'#f87171', data:sc(p[key])})),
+      {label:'ES整體', color:PAL.c1, data:sc(es[key])},
+      {label:'新北區', color:PAL.c3, data:sc(O.regions['新北區'][key])},
+      {label:'台北區', color:PAL.c4, data:sc(O.regions['台北區'][key])},
+      ...sel.map(p=>({label:p.name, color:PAL.c5, data:sc(p[key])})),
     ];
   };
   const sCsi = mk('csi',1), sRev = mk('rev',100);
@@ -1296,7 +1334,7 @@ function renderOfficial(){
   const drawMatrix = ()=>{
     const metric = offCtl.metric;
     const fmt = v => v==null ? '<span style="color:var(--muted)">—</span>' : (metric==='csi' ? v.toFixed(1) : (v*100).toFixed(1)+'%');
-    const row = (name, arr, strong, sub)=>`<tr${strong?' style="background:rgba(45,212,191,.07);font-weight:800;"':''}>
+    const row = (name, arr, strong, sub)=>`<tr${strong?' style="background:var(--strong-bg);font-weight:800;"':''}>
       <td class="name" style="position:sticky;left:0;background:var(--card);z-index:1;">${name}${sub?`<span style="color:var(--muted);font-weight:400;font-size:10.5px;"> ${sub}</span>`:''}</td>
       ${arr.map((v,i)=>`<td style="${offHeat(v,metric)}" title="${name} ${fmtYM(months[i])}">${fmt(v)}</td>`).join('')}</tr>`;
     let body = '';
@@ -1318,6 +1356,18 @@ function renderOfficial(){
 }
 
 // ================= INIT =================
+function applyThemeUi(){
+  const t = document.documentElement.getAttribute('data-theme');
+  document.getElementById('themeBtn').textContent = t==='light' ? '🌙 深色' : '☀️ 淺色';
+}
+document.getElementById('themeBtn').addEventListener('click', ()=>{
+  const next = document.documentElement.getAttribute('data-theme')==='light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  try{ localStorage.setItem('csi-theme', next); }catch(e){}
+  loadPalette(); applyThemeUi();
+  const t = TABS.find(t=>t.id===currentTab); if(t) t.render();
+});
+applyThemeUi();
 buildNav();
 buildFilterBar();
 renderHeader();
