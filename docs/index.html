@@ -1236,7 +1236,7 @@ function renderInsights(){
 }
 
 // ================= TAB: OFFICIAL (官方月度成績：1000分制CSI + 再回廠率) =================
-const offCtl = { metric:'csi' };
+const offCtl = { metric:'csi', rankPeriod:'m:last', rankBy:'csi' };
 function rawRange(lists, step){
   let mn=Infinity, mx=-Infinity;
   lists.forEach(a=>a.forEach(v=>{ if(v!=null){ if(v<mn) mn=v; if(v>mx) mx=v; } }));
@@ -1306,13 +1306,15 @@ function renderOfficial(){
     </div>
 
     <div class="card" style="margin-top:16px;">
-      <h3>📋 ${lastLbl} 各廠排名 <span class="tag">依 CSI 由高到低</span></h3>
-      <div class="tablewrap"><table>
-        <thead><tr><th>排名</th><th>廠區</th><th>體系</th><th>區域</th><th>CSI</th><th>較上月</th><th>再回廠率</th><th>較上月</th></tr></thead>
-        <tbody>${ranked.map((p,i)=>`<tr><td>${medal(i)||('#'+(i+1))}</td><td class="name">${p.name}</td><td>${p.dealer}</td><td>${p.region||''}</td>
-          <td style="${offHeat(p.csi[li],'csi')}font-weight:700;">${fmtC(p.csi[li])}</td><td>${dlt(p.csi[li],p.csi[pi],false)}</td>
-          <td style="${offHeat(p.rev[li],'rev')}font-weight:700;">${fmtR(p.rev[li])}</td><td>${dlt(p.rev[li],p.rev[pi],true)}</td></tr>`).join('') || '<tr><td colspan="8" class="empty">無資料</td></tr>'}</tbody>
-      </table></div>
+      <h3>📋 各廠排名 <span class="tag" id="offRankTag"></span></h3>
+      <div class="searchbar" style="margin-bottom:10px;">
+        <select id="offRankPeriod"></select>
+        <select id="offRankBy">
+          <option value="csi">排名依：CSI（1000分制）</option>
+          <option value="rev">排名依：再回廠率</option>
+        </select>
+      </div>
+      <div id="offRank"></div>
     </div>`;
 
   const labels = months.map(fmtYM2);
@@ -1330,6 +1332,52 @@ function renderOfficial(){
   const r1 = rawRange(sCsi.map(s=>s.data), 10), r2 = rawRange(sRev.map(s=>s.data), 2);
   drawLineChart('off-csi', {labels, min:r1.min, max:r1.max, isCount:true, series:sCsi});
   drawLineChart('off-rev', {labels, min:r2.min, max:r2.max, isCount:true, series:sRev});
+
+  // ---- ranking: by month or cumulative, by CSI or revisit rate ----
+  const yrs = Array.from(new Set(months.map(m=>m.slice(0,4))));
+  const periodSel = document.getElementById('offRankPeriod');
+  const periodOpts = [];
+  for(let i=n-1;i>=0;i--) periodOpts.push({id:'m:'+i, label:fmtYM(months[i])+' 單月'});
+  yrs.slice().reverse().forEach(y=>{
+    const cnt = months.filter(m=>m.startsWith(y)).length;
+    periodOpts.push({id:'y:'+y, label:y+' 年累計（'+cnt+' 個月平均）'});
+  });
+  periodOpts.push({id:'all', label:'全期間累計（'+n+' 個月平均）'});
+  periodSel.innerHTML = periodOpts.map(o=>`<option value="${o.id}">${o.label}</option>`).join('');
+  if(offCtl.rankPeriod==='m:last' || !periodOpts.some(o=>o.id===offCtl.rankPeriod)) offCtl.rankPeriod = 'm:'+(n-1);
+  periodSel.value = offCtl.rankPeriod;
+  document.getElementById('offRankBy').value = offCtl.rankBy;
+
+  const drawRank = ()=>{
+    const per = offCtl.rankPeriod, by = offCtl.rankBy;
+    let idxs, isMonth = per.startsWith('m:'), mi = null;
+    if(isMonth){ mi = +per.slice(2); idxs = [mi]; }
+    else if(per.startsWith('y:')){ const y = per.slice(2); idxs = months.map((m,i)=>m.startsWith(y)?i:-1).filter(i=>i>=0); }
+    else idxs = months.map((m,i)=>i);
+    const avg = (arr)=>{ const v = idxs.map(i=>arr[i]).filter(x=>x!=null); return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null; };
+    const cnt = (arr)=> idxs.filter(i=>arr[i]!=null).length;
+    const rows = plants.map(p=>({p, csi:avg(p.csi), rev:avg(p.rev), n:cnt(p.csi),
+      dCsi: isMonth && mi>0 ? (p.csi[mi]!=null && p.csi[mi-1]!=null ? p.csi[mi]-p.csi[mi-1] : null) : null,
+      dRev: isMonth && mi>0 ? (p.rev[mi]!=null && p.rev[mi-1]!=null ? p.rev[mi]-p.rev[mi-1] : null) : null}))
+      .filter(r=>r[by]!=null).sort((a,b)=>b[by]-a[by]);
+    const label = periodOpts.find(o=>o.id===per).label;
+    document.getElementById('offRankTag').textContent = label + '・依' + (by==='csi'?'CSI':'再回廠率') + '由高到低';
+    const th = (t, key)=> `<th${key===by?' style="color:var(--teal);"':''}>${t}${key===by?' ▼':''}</th>`;
+    const dltCell = (d, isRev)=>{
+      if(d==null) return '<span class="flat">—</span>';
+      const v = isRev ? d*100 : d, t = Math.abs(v).toFixed(1)+(isRev?'pt':'');
+      return v>0.0001 ? `<span class="up">▲${t}</span>` : v<-0.0001 ? `<span class="down">▼${t}</span>` : '<span class="flat">持平</span>';
+    };
+    document.getElementById('offRank').innerHTML = `<div class="tablewrap"><table>
+      <thead><tr><th>排名</th><th>廠區</th><th>體系</th><th>區域</th>${th('CSI','csi')}${isMonth? '<th>較上月</th>' : '<th>納入月數</th>'}${th('再回廠率','rev')}${isMonth? '<th>較上月</th>' : ''}</tr></thead>
+      <tbody>${rows.map((r,i)=>`<tr><td>${medal(i)||('#'+(i+1))}</td><td class="name">${r.p.name}</td><td>${r.p.dealer}</td><td>${r.p.region||''}</td>
+        <td style="${offHeat(r.csi,'csi')}font-weight:700;">${fmtC(r.csi)}</td>${isMonth? '<td>'+dltCell(r.dCsi,false)+'</td>' : '<td>'+r.n+'</td>'}
+        <td style="${offHeat(r.rev,'rev')}font-weight:700;">${fmtR(r.rev)}</td>${isMonth? '<td>'+dltCell(r.dRev,true)+'</td>' : ''}</tr>`).join('') || '<tr><td colspan="8" class="empty">此期間無成績</td></tr>'}</tbody>
+    </table></div>${isMonth? '' : '<div class="threshold-note" style="margin-top:8px;">累計為各月成績的簡單平均（官方月報未提供各月樣本數，無法加權）；缺成績的月份不列入平均。</div>'}`;
+  };
+  periodSel.addEventListener('change', e=>{ offCtl.rankPeriod = e.target.value; drawRank(); });
+  document.getElementById('offRankBy').addEventListener('change', e=>{ offCtl.rankBy = e.target.value; drawRank(); });
+  drawRank();
 
   const drawMatrix = ()=>{
     const metric = offCtl.metric;
