@@ -242,9 +242,31 @@ td.name{text-align:left;}
 
 .threshold-note{font-size:11px; color:var(--muted); margin-bottom:8px;}
 footer.foot{text-align:center; color:var(--muted); font-size:11.5px; padding:30px 0 10px;}
+
+/* ---------- login gate ---------- */
+.auth-gate{position:fixed; inset:0; z-index:500; display:none; align-items:center; justify-content:center; padding:20px; overflow:auto;
+  background:radial-gradient(1200px 600px at 10% -10%, var(--glow1) 0%, transparent 60%), linear-gradient(180deg,var(--bg0),var(--bg1));}
+.auth-box{width:100%; max-width:380px; background:linear-gradient(180deg,var(--card),var(--card2)); border:1px solid var(--border);
+  border-radius:16px; padding:26px 24px; box-shadow:var(--shadow);}
+.auth-head{text-align:center; margin-bottom:18px;}
+.auth-logo{width:46px;height:46px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--logo-bg);border:1px solid var(--border);}
+.auth-title{font-size:19px; font-weight:800; color:var(--ink);}
+.auth-sub{font-size:12.5px; color:var(--muted); margin-top:3px;}
+.auth-input{width:100%; padding:11px 13px; border:1px solid var(--border); border-radius:9px; background:var(--card2); color:var(--ink); font-size:14px; margin-bottom:10px; font-family:inherit;}
+.auth-input:focus{outline:2px solid var(--teal); outline-offset:1px;}
+.auth-btn{width:100%; padding:11px; border:none; border-radius:9px; background:linear-gradient(135deg,var(--teal),var(--cyan)); color:var(--on-accent); font-weight:800; font-size:14px; cursor:pointer; font-family:inherit;}
+.auth-btn:disabled{opacity:.6; cursor:default;}
+.auth-cancel{width:100%; margin-top:8px; padding:9px; border:1px solid var(--border); border-radius:9px; background:transparent; color:var(--ink2); cursor:pointer; font-family:inherit;}
+.auth-err{color:var(--bad); font-size:12.5px; min-height:18px; margin:2px 0 8px;}
+.auth-note{font-size:11.5px; color:var(--muted); text-align:center; margin-top:14px; line-height:1.6;}
+.auth-warn{background:var(--warn-bg); color:var(--warn); border-radius:9px; padding:9px 11px; font-size:12.5px; margin-bottom:12px; line-height:1.6;}
+.user-chip{font-size:12px; color:var(--ink2); white-space:nowrap;}
+#userMenu{display:flex; align-items:center; gap:8px;}
 </style>
 </head>
 <body>
+<div id="authGate" class="auth-gate"></div>
+<div id="appRoot" style="display:none">
 
 <div class="header">
   <div class="brand">
@@ -261,6 +283,7 @@ footer.foot{text-align:center; color:var(--muted); font-size:11.5px; padding:30p
       <button data-d="裕信">裕信</button>
       <button data-d="裕信-2">裕信-2</button>
     </div>
+    <span id="userMenu"></span>
     <button class="theme-btn" id="themeBtn" title="切換淺色／深色模式"></button>
     <div class="clock">
       <b id="clockTime">--:--:--</b>
@@ -302,11 +325,10 @@ footer.foot{text-align:center; color:var(--muted); font-size:11.5px; padding:30p
 </main>
 
 <footer class="foot">CSI 服務戰情系統 · 資料範圍 <span id="footRange"></span> · 產生時間 <span id="footGen"></span></footer>
+</div><!-- /appRoot -->
 
-<script src="records.js"></script>
-<script src="official.js"></script>
 <script>
-(function(){
+window.__csiStart = function(){
 "use strict";
 
 const PAL = {};
@@ -1421,7 +1443,264 @@ buildFilterBar();
 renderHeader();
 switchTab('overview');
 
+};
+</script>
+<script>
+/* ================================================================
+   帳號登入（沿用「戰情大表」的 Supabase 帳號系統：帳號/密碼/停用狀態都在伺服器端驗證）
+   - 不使用 SDK/CDN，直接呼叫 Supabase REST；金鑰是公開的 publishable key（本來就會出現在網頁裡）
+   - 帳號 → 內部 email：<帳號小寫>@yuxin.internal；使用者資料表 app_users（status=active 才放行）
+   - 首次登入（must_change_password）強制改密碼；閒置 30 分鐘自動登出；登入/登出寫入 log-event 稽核
+   - 登入成功「之後」才載入 records.js / official.js 並啟動儀表板
+   ================================================================ */
+(function(){
+"use strict";
+var SB_URL = 'https://lhkdnfrareofawkdmunz.supabase.co';
+var SB_KEY = 'sb_publishable_eSEri2_WtVda1a7BbzZzgg_2BpFZJDu';
+var SKEY = 'csi-auth-session-v1';
+var IDLE_MIN = 30;           // 閒置幾分鐘自動登出
+var session = null, user = null, idleTimer = null, refreshTimer = null, started = false;
+
+function $(id){ return document.getElementById(id); }
+function el(tag, attrs, kids){
+  var n = document.createElement(tag);
+  Object.keys(attrs || {}).forEach(function(k){
+    if (k === 'class') n.className = attrs[k];
+    else if (k === 'text') n.textContent = attrs[k];
+    else n.setAttribute(k, attrs[k]);
+  });
+  (kids || []).forEach(function(c){ n.appendChild(c); });
+  return n;
+}
+function toEmail(a){ return String(a).trim().toLowerCase() + '@yuxin.internal'; }
+function now(){ return Math.floor(Date.now() / 1000); }
+function saveSession(s){ try{ if (s) localStorage.setItem(SKEY, JSON.stringify(s)); else localStorage.removeItem(SKEY); }catch(e){} }
+function readSession(){ try{ return JSON.parse(localStorage.getItem(SKEY) || 'null'); }catch(e){ return null; } }
+
+function api(path, opt){
+  opt = opt || {};
+  var headers = {apikey: SB_KEY};
+  if (opt.json !== undefined) headers['Content-Type'] = 'application/json';
+  if (opt.token) headers.Authorization = 'Bearer ' + opt.token;
+  return fetch(SB_URL + path, {
+    method: opt.method || 'GET', headers: headers,
+    body: opt.json !== undefined ? JSON.stringify(opt.json) : undefined
+  }).then(function(r){
+    return r.text().then(function(t){
+      var j = null; try{ j = t ? JSON.parse(t) : null; }catch(e){}
+      return {ok: r.ok, status: r.status, json: j};
+    });
+  });
+}
+function setSession(j){
+  session = {
+    access_token: j.access_token, refresh_token: j.refresh_token,
+    expires_at: j.expires_at || (now() + (j.expires_in || 3600)),
+    uid: (j.user && j.user.id) || (session && session.uid) || null
+  };
+  saveSession(session);
+}
+function signIn(account, pw){
+  return api('/auth/v1/token?grant_type=password', {method:'POST', json:{email: toEmail(account), password: pw}}).then(function(r){
+    if (!r.ok || !r.json || !r.json.access_token) throw new Error('bad credentials');
+    setSession(r.json);
+  });
+}
+function refresh(){
+  return api('/auth/v1/token?grant_type=refresh_token', {method:'POST', json:{refresh_token: session.refresh_token}}).then(function(r){
+    if (!r.ok || !r.json || !r.json.access_token) throw new Error('refresh failed');
+    setSession(r.json);
+  });
+}
+function ensureFresh(){
+  if (!session) return Promise.reject(new Error('no session'));
+  return session.expires_at - now() < 120 ? refresh() : Promise.resolve();
+}
+function loadProfile(){
+  return api('/rest/v1/app_users?id=eq.' + encodeURIComponent(session.uid) + '&select=*', {token: session.access_token}).then(function(r){
+    return (r.ok && r.json && r.json[0]) ? r.json[0] : null;
+  });
+}
+// 稽核紀錄：IP 由伺服器端 Edge Function 從請求取得，前端只傳事件種類與 user-agent
+function logEvent(type, extra){
+  var headers = {'Content-Type': 'application/json'};
+  if (session) headers.Authorization = 'Bearer ' + session.access_token;
+  return fetch(SB_URL + '/functions/v1/log-event', {
+    method: 'POST', headers: headers,
+    body: JSON.stringify(Object.assign({type: type, user_agent: navigator.userAgent}, extra || {}))
+  }).catch(function(){});
+}
+
+/* ---------- UI ---------- */
+function gate(){ return $('authGate'); }
+function openGate(){ gate().style.display = 'flex'; }
+function closeGate(){ gate().style.display = 'none'; clearNode(gate()); }
+function clearNode(n){ while (n.firstChild) n.removeChild(n.firstChild); }
+function titleBlock(sub){
+  return el('div', {class:'auth-head'}, [
+    el('div', {class:'auth-logo', text:'📡'}),
+    el('div', {class:'auth-title', text:'CSI 服務戰情系統'}),
+    el('div', {class:'auth-sub', text: sub || '裕信汽車服務部'})
+  ]);
+}
+function input(type, ph, ac){
+  return el('input', {type: type, placeholder: ph, autocomplete: ac, class:'auth-input'});
+}
+
+function showLogin(message){
+  $('appRoot').style.display = 'none';
+  var g = gate(); clearNode(g); openGate();
+  var acc = input('text', '帳號', 'username'), pw = input('password', '密碼', 'current-password');
+  var err = el('div', {class:'auth-err', text: message || ''});
+  var btn = el('button', {type:'submit', class:'auth-btn', text:'登入'});
+  var form = el('form', {class:'auth-box'}, [
+    titleBlock(), acc, pw, err, btn,
+    el('div', {class:'auth-note', text:'使用與「營運績效戰情中心」相同的帳號密碼。登入後才會載入資料。'})
+  ]);
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var a = acc.value.trim(), p = pw.value;
+    if (!a || !p){ err.textContent = '請輸入帳號與密碼'; return; }
+    btn.disabled = true; btn.textContent = '登入中...'; err.textContent = '';
+    signIn(a, p).then(loadProfile).then(function(profile){
+      if (!profile){ throw new Error('noprofile'); }
+      if (profile.status !== 'active'){ throw new Error('disabled'); }
+      logEvent('login_success');
+      afterAuth(profile);
+    }).catch(function(ex){
+      var m = ex && ex.message;
+      if (m === 'disabled'){ err.textContent = '此帳號已被停用，請聯絡管理員'; sessionEnd(); }
+      else if (m === 'noprofile'){ err.textContent = '找不到帳號資料，請聯絡管理員'; sessionEnd(); }
+      else { err.textContent = '帳號或密碼錯誤'; logEvent('login_fail', {account: a}); }
+      btn.disabled = false; btn.textContent = '登入';
+    });
+  });
+  g.appendChild(form);
+  acc.focus();
+}
+
+function showChangePassword(forced){
+  var g = gate(); clearNode(g); openGate();
+  var cur = input('password', '目前密碼', 'current-password');
+  var n1 = input('password', '新密碼（至少6碼）', 'new-password');
+  var n2 = input('password', '再輸入一次新密碼', 'new-password');
+  var err = el('div', {class:'auth-err'});
+  var btn = el('button', {type:'submit', class:'auth-btn', text:'更新密碼'});
+  var kids = [titleBlock(forced ? '首次登入，請先設定新密碼' : '修改密碼')];
+  if (forced) kids.push(el('div', {class:'auth-warn', text:'⚠️ 您的帳號目前使用初始／臨時密碼，請先改成自己的密碼才能使用。'}));
+  kids.push(cur, n1, n2, err, btn);
+  if (!forced){
+    var cancel = el('button', {type:'button', class:'auth-cancel', text:'取消'});
+    cancel.addEventListener('click', closeGate);
+    kids.push(cancel);
+  }
+  var form = el('form', {class:'auth-box'}, kids);
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    if (!cur.value || !n1.value){ err.textContent = '請完整輸入'; return; }
+    if (n1.value.length < 6){ err.textContent = '新密碼至少需要6碼'; return; }
+    if (n1.value !== n2.value){ err.textContent = '兩次輸入的新密碼不一致'; return; }
+    if (n1.value === cur.value){ err.textContent = '新密碼不可與目前密碼相同'; return; }
+    btn.disabled = true; err.textContent = '';
+    signIn(user.account, cur.value).then(function(){
+      return api('/auth/v1/user', {method:'PUT', token: session.access_token, json:{password: n1.value}});
+    }).then(function(r){
+      if (!r.ok) throw new Error((r.json && (r.json.msg || r.json.message)) || '更新失敗');
+      return api('/rest/v1/rpc/log_password_changed', {method:'POST', token: session.access_token, json:{}});
+    }).then(function(r){
+      if (!r.ok) throw new Error('更新失敗，請聯絡管理員');
+      return loadProfile();
+    }).then(function(profile){
+      user = profile || user;
+      closeGate();
+      if (forced) enter(); else renderUserMenu();
+    }).catch(function(ex){
+      err.textContent = (ex && ex.message === 'bad credentials') ? '目前密碼不正確' : ((ex && ex.message) || '更新失敗');
+      btn.disabled = false;
+    });
+  });
+  g.appendChild(form);
+  cur.focus();
+}
+
+function renderUserMenu(){
+  var m = $('userMenu'); if (!m || !user) return;
+  clearNode(m);
+  m.appendChild(el('span', {class:'user-chip', text: (user.name || user.account) + '（' + user.account + '）'}));
+  var pwb = el('button', {class:'theme-btn', type:'button', text:'改密碼'});
+  pwb.addEventListener('click', function(){ showChangePassword(false); });
+  var out = el('button', {class:'theme-btn', type:'button', text:'登出'});
+  out.addEventListener('click', function(){ logout(); });
+  m.appendChild(pwb); m.appendChild(out);
+}
+
+/* ---------- 流程 ---------- */
+function loadScript(src, optional){
+  return new Promise(function(resolve, reject){
+    var s = document.createElement('script');
+    s.src = src + '?v=' + Math.floor(Date.now() / 300000);
+    s.onload = resolve;
+    s.onerror = function(){ optional ? resolve() : reject(new Error('載入失敗：' + src)); };
+    document.head.appendChild(s);
+  });
+}
+function afterAuth(profile){
+  user = profile;
+  if (user.must_change_password) showChangePassword(true); else enter();
+}
+function enter(){
+  closeGate();
+  var load = started ? Promise.resolve() : loadScript('records.js').then(function(){ return loadScript('official.js', true); });
+  load.then(function(){
+    if (!started){ started = true; $('appRoot').style.display = 'block'; window.__csiStart(); }
+    else $('appRoot').style.display = 'block';
+    renderUserMenu();
+    resetIdle();
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(function(){
+      refresh().catch(function(){ logout('expired'); });
+    }, 20 * 60 * 1000);
+  }).catch(function(ex){
+    showLogin('資料載入失敗，請稍後再試（' + ex.message + '）');
+  });
+}
+function resetIdle(){
+  if (idleTimer) clearTimeout(idleTimer);
+  idleTimer = setTimeout(function(){ logout('idle'); }, IDLE_MIN * 60 * 1000);
+}
+['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(function(evt){
+  document.addEventListener(evt, function(){ if (user && started) resetIdle(); }, {passive: true});
+});
+function sessionEnd(){
+  var tok = session && session.access_token;
+  session = null; saveSession(null);
+  if (!tok) return Promise.resolve();
+  try{ return api('/auth/v1/logout', {method:'POST', token: tok}).catch(function(){}); }catch(e){ return Promise.resolve(); }
+}
+function logout(reason){
+  var done = user ? logEvent('logout') : Promise.resolve();
+  Promise.resolve(done).then(sessionEnd).catch(function(){}).then(function(){
+    try{
+      if (reason === 'idle') sessionStorage.setItem('csi-auth-msg', '閒置過久，已自動登出，請重新登入。');
+      else if (reason === 'expired') sessionStorage.setItem('csi-auth-msg', '登入已逾時，請重新登入。');
+    }catch(e){}
+    location.reload();   // 重新載入頁面，確保記憶體中的資料一併清除
+  });
+}
+
+function boot(){
+  var msg = null;
+  try{ msg = sessionStorage.getItem('csi-auth-msg'); sessionStorage.removeItem('csi-auth-msg'); }catch(e){}
+  session = readSession();
+  if (!session || !session.refresh_token){ showLogin(msg); return; }
+  ensureFresh().then(loadProfile).then(function(profile){
+    if (profile && profile.status === 'active') afterAuth(profile);
+    else { sessionEnd(); showLogin(profile ? '此帳號已被停用，請聯絡管理員。' : msg); }
+  }).catch(function(){ session = null; saveSession(null); showLogin(msg); });
+}
+document.addEventListener('DOMContentLoaded', boot);
 })();
+
 </script>
 </body>
 </html>
